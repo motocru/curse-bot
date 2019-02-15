@@ -1,0 +1,13 @@
+{
+  "name": "curse-bot",
+  "version": "1.0.0",
+  "description": "a bot to keep track of cursing milestones",
+  "author": "Motocru",
+  "dependencies": {
+    "@types/winston": "^2.4.4",
+    "assert": "^1.4.1",
+    "discord.io": "github:woor/discord.io#gateway_v6",
+    "mongodb": "^3.1.13",
+    "winston": "^3.2.1"
+  }
+}

@@ -1,0 +1,6 @@
+#cutting out the  node_modules directory
+node_modules/
+
+#cutting out authorization as well as curse object
+auth.json
+curses.json
