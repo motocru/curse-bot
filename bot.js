@@ -79,7 +79,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       message = message.toUpperCase();
       var args = message.split(' ');
       for (var i in args) {
-        if (curses.curses.includes(args[i])) {
+        if (curses.curses.includes(args[i]) || curses.curses.includes(args[i].replace(/(ING|ER(S)*)/g,''))) {
           if (returnedUser.jarObject[args[i]] && addedObject[args[i]]) {
             returnedUser.jarObject[args[i]]++;
             addedObject[args[i]]++;
