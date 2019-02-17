@@ -79,7 +79,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       message = message.toUpperCase();
       var args = message.split(' ');
       for (var i in args) {
-        if (curses.curses.includes(args[i]) || curses.curses.includes(args[i].replace(/(ING|ER(S)*)/g,''))) {
+        if (curses.curses.includes(args[i]) || curses.curses.includes(args[i].replace(/(ING|ER*S*Y*|S)$/gm,''))) {
           if (returnedUser.jarObject[args[i]] && addedObject[args[i]]) {
             returnedUser.jarObject[args[i]]++;
             addedObject[args[i]]++;
@@ -97,6 +97,9 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       if (!JSON.stringify(addedObject) != '{}') {
         users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
           messageEvaluator(updatedUser, addedObject, channelID);
+          users.totalSwears(function(err, total) {
+            serverEvaluator(total, addedObject, channelID);
+          });
         });
       }
     });
@@ -113,9 +116,13 @@ function swearTotaler(user, nickname, cb) {
     });
   } else {
     users.userSwears(user, function(err, curseObject) {
-      stringBuilder(curseObject, returnString, function(completed) {
-        cb(completed);
-      })
+      if (curseObject == null) {
+        cb(returnString.concat(`${nickname} has not yet cursed on this server\nthey are pure of heart and free from sin`));
+      } else {
+        stringBuilder(curseObject, returnString, function(completed) {
+          cb(completed);
+        });
+      }
     });
   }
 }
@@ -134,6 +141,15 @@ function messageEvaluator(user, addedObject, channelID) {
     bot.sendMessage({
       to: channelID,
       message: messageDecider(user, i, addedObject)
+    });
+  }
+}
+
+function serverEvaluator(total, addedObject, channelID) {
+  for (var i in addedObject) {
+    bot.sendMessage({
+      to: channelID,
+      message: serverDecider(i, total[i]-addedObject[i], total[i])
     });
   }
 }
@@ -172,4 +188,38 @@ function messageDecider(user, curse, cursesChanged) {
   } else if ((user.jarObject[curse]-cursesChanged[curse]) < 1000 && user.jarObject[curse] >= 1000) {
     return `<@!${user._id}> has used ${curse.toLowerCase()} over 1000 times. ${curses.userMessages.message12}`;
   } else {return '';}
+}
+
+function serverDecider(swear, difference, total) {
+  if (difference < 10 && total >= 10) {
+    return `This server has used ${swear.toLowerCase()}, over 10 times, ${curses.serverMessages.message1}`;
+  } else if (difference < 100 && total >= 100) {
+    return `This server has used ${swear.toLowerCase()}, over 100 times, ${curses.serverMessages.message2}`;
+  } else if (difference < 250 && total >= 250) {
+    return `This server has used ${swear.toLowerCase()}, over 250 times, ${curses.serverMessages.message3}`;
+  } else if (difference < 500 && total >= 500) {
+    return `This server has used ${swear.toLowerCase()}, over 500 times, ${curses.serverMessages.message4}`;
+  } else if (difference < 1000 && total >= 1000) {
+    return `This server has used ${swear.toLowerCase()}, over 1,000 times, ${curses.serverMessages.message5}`;
+  } else if (difference < 1250 && total >= 1250) {
+    return `This server has used ${swear.toLowerCase()}, over 1,250 times, ${curses.serverMessages.message6}`;
+  } else if (difference < 1500 && total >= 1500) {
+    return `This server has used ${swear.toLowerCase()}, over 1,500 times, ${curses.serverMessages.message7}`;
+  } else if (difference < 2000 && total >= 2000) {
+    return `This server has used ${swear.toLowerCase()}, over 2,000 times, ${curses.serverMessages.message8}`;
+  } else if (difference < 5000 && total >= 5000) {
+    return `This server has used ${swear.toLowerCase()}, over 5,000 times, ${curses.serverMessages.message9}`;
+  } else if (difference < 7500 && total >= 7500) {
+    return `This server has used ${swear.toLowerCase()}, over 7,500 times, ${curses.serverMessages.message10}`;
+  } else if (difference < 9500 && total >= 9500) {
+    return `This server has used ${swear.toLowerCase()}, over 9,500 times, ${curses.serverMessages.message11}`;
+  } else if (difference < 9750 && total >= 9750) {
+    return `This server has used ${swear.toLowerCase()}, over 9,750 times, ${curses.serverMessages.message12}`;
+  } else if (difference < 9850 && total >= 9850) {
+    return `This server has used ${swear.toLowerCase()}, over 9,850 times, ${curses.serverMessages.message13}`;
+  } else if (difference< 10000 && total >= 10000) {
+    return `This server has used ${swear.toLowerCase()}, over 10,000 times, ${curses.serverMessages.message14}`;
+  } else {
+    return '';
+  }
 }

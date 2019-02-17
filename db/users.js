@@ -50,7 +50,11 @@ module.exports.addSwear = addSwear;
 function userSwears(id, cb) {
   findByID(id, function(err, foundUser) {
     if (err) {console.log(err);}
-    cb(err, foundUser.jarObject);
+    if (foundUser == null) {
+      cb(err, null);
+    } else {
+      cb(err, foundUser.jarObject);
+    } 
   });
 }
 module.exports.userSwears = userSwears;
