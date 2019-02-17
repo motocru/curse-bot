@@ -35,7 +35,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       case 'HELP':
         bot.sendMessage({
           to: channelID,
-          message: 'bot works'
+          message: "Current Commands:\n'?total' => returns the total swear count for the whole server\n'?total {name}' => returns the swear count for a user (will take multiple users)"
         });
         break;
       case 'TOTAL':
