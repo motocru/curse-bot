@@ -24,20 +24,23 @@ bot.on('ready', function(evt) {
 });
 
 bot.on('message', function(user, userID, channelID, message, evt) {
-  /**the initial if will separate normal comments from the CLI arguments
+  /**the initial if statement will separate normal comments from the CLI arguments
    * based on if the first given character is the '?' character
    */
   if (message.substring(0,1) == '?') {
     var args = message.substring(1).split(' ');
     var cmd = args[0].toUpperCase();
-    //console.log(evt.d.mentions[0].member.nick);
+    console.log(evt);
     switch(cmd) {
+      /**help message that lays out commands available */
       case 'HELP':
         bot.sendMessage({
           to: channelID,
           message: "Current Commands:\n'?total' => returns the total swear count for the whole server\n'?total {name}' => returns the swear count for a user (will take multiple users)"
         });
         break;
+      /**returns the total count for each swear to the command line.
+       * will return counts for individuals if they are tagged */  
       case 'TOTAL':
         if (evt.d.mentions[0] == undefined) {
           swearTotaler(null, null, function(completed) {
@@ -69,7 +72,6 @@ bot.on('message', function(user, userID, channelID, message, evt) {
      * store the ones that are exact matches, but variations like those ending in -ed and -ing
      * may have to come later
      */
-    //console.log('we hit this');
 
     users.save(userID, {}, function(err, returnedUser) {
       if (err) {console.log(err);}
@@ -106,6 +108,10 @@ bot.on('message', function(user, userID, channelID, message, evt) {
   }
 });
 
+/**this function is called when the bot is given the '?total' command.
+ * checks to see if a user was provided or if it is null to determine which of the
+ * database functions to call on (user or whole server).
+ */
 function swearTotaler(user, nickname, cb) {
   var returnString = (user == null) ? `Server total swear count\n` : `${nickname} total swear count\n`;
   if (user == null) {
@@ -127,6 +133,7 @@ function swearTotaler(user, nickname, cb) {
   }
 }
 
+/**builds a string to return by looping over every item in the given curseObject */
 function stringBuilder(curseObject, responseString, cb) {
   for (var i in curseObject) {
     responseString = responseString.concat(`${i.toLowerCase()}: ${curseObject[i]}\n`);
@@ -134,6 +141,11 @@ function stringBuilder(curseObject, responseString, cb) {
   cb(responseString);
 }
 
+/**loops through each of the items in the addedObject and sends them into the message
+ * decider to evaluate if a message is sent out or not. message is send out via the 
+ * bot.sendMessage function
+ * TODO:re-work for callback functions
+ */
 function messageEvaluator(user, addedObject, channelID) {
   //console.log(JSON.stringify(addedObject));
   //console.log(JSON.stringify(user.jarObject));
@@ -145,6 +157,11 @@ function messageEvaluator(user, addedObject, channelID) {
   }
 }
 
+/**loops through each item in the addedObject to determine if what was added is enough
+ * for a milestone message. the difference for this one is that the messages here
+ * are for the whole server rather than individuals
+ * TODO:re-work for callback functions
+ */
 function serverEvaluator(total, addedObject, channelID) {
   for (var i in addedObject) {
     bot.sendMessage({
@@ -158,7 +175,8 @@ function serverEvaluator(total, addedObject, channelID) {
  * crossed a threshold with the amount of times they cursed in the last scentence compared
  * with the total number they have saved up. this method is also re-used when pinging the 
  * server-wide messages... I think... I'm hoping to re-use this in that manner, but we will 
- * see when I get to that bridge
+ * see when I get to that bridge.
+ * TODO: re-work to use callback function instead of return statements for asynchronicity
  */
 function messageDecider(user, curse, cursesChanged) {
 
@@ -190,6 +208,9 @@ function messageDecider(user, curse, cursesChanged) {
   } else {return '';}
 }
 
+/**function to return a message here if it has crossed over a certain threshold for the whole server
+ * TODO: re-work to use callback functions rather than return statements for asynchronicity
+ */
 function serverDecider(swear, difference, total) {
   if (difference < 10 && total >= 10) {
     return `This server has used ${swear.toLowerCase()}, over 10 times, ${curses.serverMessages.message1}`;
