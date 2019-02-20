@@ -184,8 +184,7 @@ function serverEvaluator(total, addedObject, channelID) {
 function messageDecider(user, curse, cursesChanged) {
 
   if (user.jarObject[curse] == cursesChanged[curse]) {
-    return `<@!${user._id}> has just used ${curse.toLowerCase()} for the 
-    first time, ${curses.userMessages.message1}`;
+    return `<@!${user._id}> has just used ${curse.toLowerCase()} for the first time, ${curses.userMessages.message1}`;
   } else if ((user.jarObject[curse]-cursesChanged[curse]) < 10 && user.jarObject[curse] >= 10) {
     return `<@!${user._id}> has used ${curse.toLowerCase()} over 10 times, ${curses.userMessages.message2}`;
   } else if ((user.jarObject[curse]-cursesChanged[curse]) < 50 && user.jarObject[curse] >= 50) {
