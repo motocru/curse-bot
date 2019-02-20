@@ -30,7 +30,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
   if (message.substring(0,1) == '?') {
     var args = message.substring(1).split(' ');
     var cmd = args[0].toUpperCase();
-    console.log(evt);
+    //console.log(evt);
     switch(cmd) {
       /**help message that lays out commands available */
       case 'HELP':
@@ -68,9 +68,11 @@ bot.on('message', function(user, userID, channelID, message, evt) {
         break;
     }
   } else if (userID !== bot.id){
-    /**this part of the bot actually adds the curse words so far I think I should be able to 
-     * store the ones that are exact matches, but variations like those ending in -ed and -ing
-     * may have to come later
+    /**this part of the bot actually adds the curse words. each element in the message array
+     * is first stripped of any extra punctuation that might cause it not to be an exact
+     * match with one of the listed words, after that, it is compared to all hard-coded words,
+     * then determined if it matches some common suffix's such as -ing -er.
+     * it's then added to the user database
      */
 
     users.save(userID, {}, function(err, returnedUser) {
@@ -81,6 +83,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       message = message.toUpperCase();
       var args = message.split(' ');
       for (var i in args) {
+        args[i] = args[i].replace(/[.,\/#!$%\^&\*;:{}=\-_~`?()]/g,'');
         if (curses.curses.includes(args[i]) || curses.curses.includes(args[i].replace(/(ING|ER*S*Y*|S)$/gm,''))) {
           if (returnedUser.jarObject[args[i]] && addedObject[args[i]]) {
             returnedUser.jarObject[args[i]]++;
