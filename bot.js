@@ -92,20 +92,21 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       message = message.replace(/\s/g,'');
       words = message.match(new RegExp(`${curses.curses.join("|")}`,"g"));
 
-      for (var i in words) {
-        if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
-          returnedUser.jarObject[words[i]]++;
-          addedObject[words[i]]++;
-        } else if (returnedUser.jarObject[words[i]]) {
-          returnedUser.jarObject[words[i]]++;
-          addedObject[words[i]] = 1;
-        } else {
-          returnedUser.jarObject[words[i]] = 1;
-          addedObject[words[i]] = 1;
+      //console.log(words);
+      if (words !== null) {
+        for (var i in words) {
+          if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
+            returnedUser.jarObject[words[i]]++;
+            addedObject[words[i]]++;
+          } else if (returnedUser.jarObject[words[i]]) {
+            returnedUser.jarObject[words[i]]++;
+            addedObject[words[i]] = 1;
+          } else {
+            returnedUser.jarObject[words[i]] = 1;
+            addedObject[words[i]] = 1;
+          }
         }
-      }
-      //console.log(JSON.stringify(addedObject) == '{}');
-      if (!JSON.stringify(addedObject) != '{}') {
+        
         users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
           messageEvaluator(updatedUser, addedObject, channelID);
           users.totalSwears(function(err, total) {
