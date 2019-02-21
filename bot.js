@@ -3,7 +3,16 @@ var logger = require('winston');
 var auth = require('./auth.json');
 var curses = require('./curses.json');
 var users = require('./db/users');
-//var swearjar = {};
+
+/**sorts the entire list of curses on server startup with longest first
+ * and shortest last. this stops .match function from pushing up
+ * shorter versions of words first
+ */
+curses.curses.sort(function(a,b) {
+  return b.length - a.length ||
+    a.localeCompare(b);
+});
+
 //configure the logger settings below
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {
@@ -77,25 +86,22 @@ bot.on('message', function(user, userID, channelID, message, evt) {
 
     users.save(userID, {}, function(err, returnedUser) {
       if (err) {console.log(err);}
-      //var addedObject = Object.assign({}, returnedUser.jarObject);
       var addedObject = {};
       //console.log(JSON.stringify(addedObject));
       message = message.toUpperCase();
-      var args = message.split(' ');
-      for (var i in args) {
-        args[i] = args[i].replace(/[.,\/#!$%\^&\*;:{}=\-_~`?()]/g,'');
-        if (curses.curses.includes(args[i]) || curses.curses.includes(args[i].replace(/(ING|ER*S*Y*|S)$/gm,''))) {
-          if (returnedUser.jarObject[args[i]] && addedObject[args[i]]) {
-            returnedUser.jarObject[args[i]]++;
-            addedObject[args[i]]++;
-          } else if (returnedUser.jarObject[args[i]]) {
-            returnedUser.jarObject[args[i]]++;
-            addedObject[args[i]] = 1;
-          } 
-          else {
-            returnedUser.jarObject[args[i]] = 1;
-            addedObject[args[i]] = 1;
-          }
+      message = message.replace(/\s/g,'');
+      words = message.match(new RegExp(`${curses.curses.join("|")}`,"g"));
+
+      for (var i in words) {
+        if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
+          returnedUser.jarObject[words[i]]++;
+          addedObject[words[i]]++;
+        } else if (returnedUser.jarObject[words[i]]) {
+          returnedUser.jarObject[words[i]]++;
+          addedObject[words[i]] = 1;
+        } else {
+          returnedUser.jarObject[words[i]] = 1;
+          addedObject[words[i]] = 1;
         }
       }
       //console.log(JSON.stringify(addedObject) == '{}');
