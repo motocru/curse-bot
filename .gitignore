@@ -4,3 +4,6 @@ node_modules/
 #cutting out authorization as well as curse object
 auth.json
 curses.json
+
+#there's no need to bring in the note.txt file either
+note.txt
