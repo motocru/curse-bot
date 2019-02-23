@@ -94,6 +94,13 @@ bot.on('message', function(user, userID, channelID, message, evt) {
 
       //console.log(words);
       if (words !== null) {
+        if (JSON.stringify(returnedUser.jarObject)=== '{}') {
+          bot.sendMessage({
+            to: channelID,
+            message: `<@!${userID}> ${curses.userMessages.message1}`
+          });
+        }
+
         for (var i in words) {
           if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
             returnedUser.jarObject[words[i]]++;
@@ -189,10 +196,7 @@ function serverEvaluator(total, addedObject, channelID) {
  * TODO: re-work to use callback function instead of return statements for asynchronicity
  */
 function messageDecider(user, curse, cursesChanged) {
-
-  if (user.jarObject[curse] == cursesChanged[curse]) {
-    return `<@!${user._id}> has just used ${curse.toLowerCase()} for the first time, ${curses.userMessages.message1}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 10 && user.jarObject[curse] >= 10) {
+  if ((user.jarObject[curse]-cursesChanged[curse]) < 10 && user.jarObject[curse] >= 10) {
     return `<@!${user._id}> has used ${curse.toLowerCase()} over 10 times, ${curses.userMessages.message2}`;
   } else if ((user.jarObject[curse]-cursesChanged[curse]) < 50 && user.jarObject[curse] >= 50) {
     return `<@!${user._id}> has used ${curse.toLowerCase()} over 50 times, ${curses.userMessages.message3}`;
@@ -221,8 +225,9 @@ function messageDecider(user, curse, cursesChanged) {
  * TODO: re-work to use callback functions rather than return statements for asynchronicity
  */
 function serverDecider(swear, difference, total) {
-  if (difference < 10 && total >= 10) {
-    return `This server has used ${swear.toLowerCase()}, over 10 times, ${curses.serverMessages.message1}`;
+  //console.log(`differernce is: ${difference}, total is: ${total}`);
+  if (difference === 0) {
+    return `${swear.toLowerCase()}, has been used on this server for the first time, ${curses.serverMessages.message1}`;
   } else if (difference < 100 && total >= 100) {
     return `This server has used ${swear.toLowerCase()}, over 100 times, ${curses.serverMessages.message2}`;
   } else if (difference < 250 && total >= 250) {
