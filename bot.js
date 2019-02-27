@@ -87,9 +87,8 @@ bot.on('message', function(user, userID, channelID, message, evt) {
     users.save(userID, {}, function(err, returnedUser) {
       if (err) {console.log(err);}
       var addedObject = {};
-      //console.log(JSON.stringify(addedObject));
       message = message.toUpperCase();
-      //message = message.replace(/\s/g,'');
+      message = message.replace(/[.,\/#!$%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
       message = ' '+message+' ';
       //console.log(message);
       words = message.match(new RegExp(` (${curses.curses.join("|")}) `,"gi"));
