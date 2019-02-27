@@ -90,7 +90,9 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       //console.log(JSON.stringify(addedObject));
       message = message.toUpperCase();
       //message = message.replace(/\s/g,'');
-      words = message.match(new RegExp(`\s(${curses.curses.join("|")})\s`,"g"));
+      message = ' '+message+' ';
+      //console.log(message);
+      words = message.match(new RegExp(` (${curses.curses.join("|")}) `,"gi"));
 
       //console.log(words);
       if (words !== null) {
@@ -102,6 +104,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
         }
 
         for (var i in words) {
+          words[i] = words[i].replace(/\s/g,'');
           if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
             returnedUser.jarObject[words[i]]++;
             addedObject[words[i]]++;
