@@ -1,0 +1,28 @@
+{
+  "$id": "curses.json",
+  "description": "A representation of the data stored inside of the curses.json file",
+  "type": "object",
+  "properties": {
+    "curses": {
+      "type": "array",
+      "description": "an array containing all recognized curse-words",
+      "items": {
+        "type": "string"
+      }
+    },
+    "userMessages": {
+      "type": "object",
+      "description": "an object containing all of the user-specific curse word messsages",
+      "items": {
+        "type": "string"
+      }
+    },
+    "serverMessages": {
+      "type": "object",
+      "description": "an object containing all server-specific curse word messages",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
