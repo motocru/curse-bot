@@ -103,7 +103,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
         }
 
         for (var i in words) {
-          words[i] = words[i].replace(/\s/g,'');
+          words[i] = words[i].substring(1,words[i].length-1);
           if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
             returnedUser.jarObject[words[i]]++;
             addedObject[words[i]]++;
