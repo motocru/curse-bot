@@ -4,6 +4,38 @@ var auth = require('./auth.json');
 var curses = require('./curses.json');
 var users = require('./db/users');
 
+/**adding the  message constants below */
+const USERMESSAGES = {
+  10: curses.userMessages.message2,
+  50: curses.userMessages.message3,
+  100: curses.userMessages.message4,
+  200: curses.userMessages.message5,
+  250: curses.userMessages.message6,
+  350: curses.userMessages.message7,
+  500: curses.userMessages.message8,
+  600: curses.userMessages.message9,
+  700: curses.userMessages.message10,
+  800: curses.userMessages.message11,
+  1000: curses.userMessages.message12
+}
+
+const SERVERMESSAGES = {
+  0: curses.serverMessages.message1,
+  100: curses.serverMessages.message1,
+  250: curses.serverMessages.message1,
+  500: curses.serverMessages.message1,
+  1000: curses.serverMessages.message1,
+  1250: curses.serverMessages.message1,
+  1500: curses.serverMessages.message1,
+  2000: curses.serverMessages.message1,
+  5000: curses.serverMessages.message1,
+  7500: curses.serverMessages.message1,
+  9500: curses.serverMessages.message1,
+  9750: curses.serverMessages.message1,
+  9850: curses.serverMessages.message1,
+  10000: curses.serverMessages.message1
+}
+
 /**sorts the entire list of curses on server startup with longest first
  * and shortest last. this stops .match function from pushing up
  * shorter versions of words first
