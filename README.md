@@ -11,3 +11,4 @@ a bot to keep track of used curses and different levels of distastefulness miles
 - **DB/:** holds files related to the mongodb database that keeps track of server and user counts for cuss words
 - **bot.js:** houses the main code for the bot that parses messages and sends messages to servers and users when milestones are hit
 - **package.json:** holds project-wide information
+- **cursesSchema.json** notes the schema of the curses.json file used by the server but is not present in this repo (for obvious vulgarity related reasons).
