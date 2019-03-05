@@ -123,7 +123,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
       
       //console.log(message);
-      words = message.match(new RegExp(`\\b(${curses.curses.join("|")})`,"gi"));
+      words = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
 
       //console.log(words);
       if (words !== null) {
@@ -228,7 +228,6 @@ function messageDecider(user, curse, difference, MILESTONES) {
   if (user._id === undefined) {
     addressorText = 'This server';
     curseNum = user[curse];
-    console.log(`we made it here, curseNum is: ${curseNum}, difference is: ${difference}`);
   } else {
     addressorText = `<@!${user._id}>`;
     curseNum = user.jarObject[curse]
