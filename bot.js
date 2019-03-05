@@ -104,7 +104,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       default: 
         bot.sendMessage({
           to:channelID,
-          message: 'Unknown command'
+          message: "Unkown Command, try using: '?help' for command list"
         });
         break;
     }
