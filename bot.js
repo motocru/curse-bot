@@ -5,7 +5,7 @@ var curses = require('./curses.json');
 var users = require('./db/users');
 
 /**adding the  message constants below */
-const USERMESSAGES = {
+const USERMILESTONES = {
   10: curses.userMessages.message2,
   50: curses.userMessages.message3,
   100: curses.userMessages.message4,
@@ -19,21 +19,21 @@ const USERMESSAGES = {
   1000: curses.userMessages.message12
 }
 
-const SERVERMESSAGES = {
-  0: curses.serverMessages.message1,
-  100: curses.serverMessages.message1,
-  250: curses.serverMessages.message1,
-  500: curses.serverMessages.message1,
-  1000: curses.serverMessages.message1,
-  1250: curses.serverMessages.message1,
-  1500: curses.serverMessages.message1,
-  2000: curses.serverMessages.message1,
-  5000: curses.serverMessages.message1,
-  7500: curses.serverMessages.message1,
-  9500: curses.serverMessages.message1,
-  9750: curses.serverMessages.message1,
-  9850: curses.serverMessages.message1,
-  10000: curses.serverMessages.message1
+const SERVERMILESTONES = {
+  1: curses.serverMessages.message1,
+  10: curses.serverMessages.message2,
+  100: curses.serverMessages.message3,
+  250: curses.serverMessages.message4,
+  500: curses.serverMessages.message5,
+  750: curses.serverMessages.message6,
+  1000: curses.serverMessages.message7,
+  1250: curses.serverMessages.message8,
+  1500: curses.serverMessages.message9,
+  1750: curses.serverMessages.message10,
+  2000: curses.serverMessages.message11,
+  2250: curses.serverMessages.message12,
+  2350: curses.serverMessages.message13,
+  2500: curses.serverMessages.message14
 }
 
 /**sorts the entire list of curses on server startup with longest first
@@ -121,13 +121,13 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       var addedObject = {};
       message = message.toUpperCase();
       message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
-      message = ' '+message+' ';
+      
       //console.log(message);
-      words = message.match(new RegExp(` (${curses.curses.join("|")}) `,"gi"));
+      words = message.match(new RegExp(`\\b(${curses.curses.join("|")})`,"gi"));
 
       //console.log(words);
       if (words !== null) {
-        if (JSON.stringify(returnedUser.jarObject)=== '{}') {
+        if (JSON.stringify(returnedUser.jarObject) === '{}') {
           bot.sendMessage({
             to: channelID,
             message: `<@!${userID}> ${curses.userMessages.message1}`
@@ -135,7 +135,6 @@ bot.on('message', function(user, userID, channelID, message, evt) {
         }
 
         for (var i in words) {
-          words[i] = words[i].substring(1,words[i].length-1);
           if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
             returnedUser.jarObject[words[i]]++;
             addedObject[words[i]]++;
@@ -198,12 +197,10 @@ function stringBuilder(curseObject, responseString, cb) {
  * TODO:re-work for callback functions
  */
 function messageEvaluator(user, addedObject, channelID) {
-  //console.log(JSON.stringify(addedObject));
-  //console.log(JSON.stringify(user.jarObject));
   for (var i in addedObject) {
     bot.sendMessage({
       to: channelID,
-      message: messageDecider(user, i, addedObject)
+      message: messageDecider(user, i, user.jarObject[i]-addedObject[i], USERMILESTONES)
     });
   }
 }
@@ -217,78 +214,30 @@ function serverEvaluator(total, addedObject, channelID) {
   for (var i in addedObject) {
     bot.sendMessage({
       to: channelID,
-      message: serverDecider(i, total[i]-addedObject[i], total[i])
+      message: messageDecider(total, i, total[i]-addedObject[i], SERVERMILESTONES)
     });
   }
 }
 
 /**this function will decide what message to send out. this chooses by seeing if the user
  * crossed a threshold with the amount of times they cursed in the last scentence compared
- * with the total number they have saved up. this method is also re-used when pinging the 
- * server-wide messages... I think... I'm hoping to re-use this in that manner, but we will 
- * see when I get to that bridge.
- * TODO: re-work to use callback function instead of return statements for asynchronicity
+ * with the total number they have saved up. 
  */
-function messageDecider(user, curse, cursesChanged) {
-  if ((user.jarObject[curse]-cursesChanged[curse]) < 10 && user.jarObject[curse] >= 10) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 10 times, ${curses.userMessages.message2}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 50 && user.jarObject[curse] >= 50) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 50 times, ${curses.userMessages.message3}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 100 && user.jarObject[curse] >= 100) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 100 times, ${curses.userMessages.message4}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 200 && user.jarObject[curse] >= 200) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 200 times, ${curses.userMessages.message5}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 250 && user.jarObject[curse] >= 250) {
-    return `<@!${user_id}> has used ${curse.toLowerCase()} over 250 times, ${curses.userMessages.message6}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 350 && user.jarObject[curse] >= 350) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 350 times, ${curses.userMessages.message7}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 500 && user.jarObject[curse] >= 500) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 500 times, ${curses.userMessages.message8}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 600 && user.jarObject[curse] >= 600) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 600 times, ${curses.userMessages.message9}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 700 && user.jarObject[curse] >= 700) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 700 times, ${curses.userMessages.message10}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 800 && user.jarObject[curse] >= 800) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 800 times, ${curses.userMessages.message11}`;
-  } else if ((user.jarObject[curse]-cursesChanged[curse]) < 1000 && user.jarObject[curse] >= 1000) {
-    return `<@!${user._id}> has used ${curse.toLowerCase()} over 1000 times. ${curses.userMessages.message12}`;
-  } else {return '';}
-}
-
-/**function to return a message here if it has crossed over a certain threshold for the whole server
- * TODO: re-work to use callback functions rather than return statements for asynchronicity
- */
-function serverDecider(swear, difference, total) {
-  //console.log(`differernce is: ${difference}, total is: ${total}`);
-  if (difference === 0) {
-    return `${swear.toLowerCase()}, has been used on this server for the first time, ${curses.serverMessages.message1}`;
-  } else if (difference < 100 && total >= 100) {
-    return `This server has used ${swear.toLowerCase()}, over 100 times, ${curses.serverMessages.message2}`;
-  } else if (difference < 250 && total >= 250) {
-    return `This server has used ${swear.toLowerCase()}, over 250 times, ${curses.serverMessages.message3}`;
-  } else if (difference < 500 && total >= 500) {
-    return `This server has used ${swear.toLowerCase()}, over 500 times, ${curses.serverMessages.message4}`;
-  } else if (difference < 1000 && total >= 1000) {
-    return `This server has used ${swear.toLowerCase()}, over 1,000 times, ${curses.serverMessages.message5}`;
-  } else if (difference < 1250 && total >= 1250) {
-    return `This server has used ${swear.toLowerCase()}, over 1,250 times, ${curses.serverMessages.message6}`;
-  } else if (difference < 1500 && total >= 1500) {
-    return `This server has used ${swear.toLowerCase()}, over 1,500 times, ${curses.serverMessages.message7}`;
-  } else if (difference < 2000 && total >= 2000) {
-    return `This server has used ${swear.toLowerCase()}, over 2,000 times, ${curses.serverMessages.message8}`;
-  } else if (difference < 5000 && total >= 5000) {
-    return `This server has used ${swear.toLowerCase()}, over 5,000 times, ${curses.serverMessages.message9}`;
-  } else if (difference < 7500 && total >= 7500) {
-    return `This server has used ${swear.toLowerCase()}, over 7,500 times, ${curses.serverMessages.message10}`;
-  } else if (difference < 9500 && total >= 9500) {
-    return `This server has used ${swear.toLowerCase()}, over 9,500 times, ${curses.serverMessages.message11}`;
-  } else if (difference < 9750 && total >= 9750) {
-    return `This server has used ${swear.toLowerCase()}, over 9,750 times, ${curses.serverMessages.message12}`;
-  } else if (difference < 9850 && total >= 9850) {
-    return `This server has used ${swear.toLowerCase()}, over 9,850 times, ${curses.serverMessages.message13}`;
-  } else if (difference< 10000 && total >= 10000) {
-    return `This server has used ${swear.toLowerCase()}, over 10,000 times, ${curses.serverMessages.message14}`;
+function messageDecider(user, curse, difference, MILESTONES) {
+  /**rework here */
+  if (user._id === undefined) {
+    addressorText = 'This server';
+    curseNum = user[curse];
+    console.log(`we made it here, curseNum is: ${curseNum}, difference is: ${difference}`);
   } else {
-    return '';
+    addressorText = `<@!${user._id}>`;
+    curseNum = user.jarObject[curse]
   }
+
+  for (const mile in MILESTONES) {
+    if (difference < mile && curseNum >= mile) {
+      return `${addressorText} has used ${curse.toLowerCase()} over ${mile} times, ${MILESTONES[mile]}`;
+    }
+  }
+  return '';
 }
