@@ -112,7 +112,10 @@ function botCommands(message, evt, cb) {
   }
 }
 
-function parseMessage(userID, channelID, message, evt) {
+/**this function is needed as the 'else' in the initial if-else statement 
+ * for better code readability on the initial message
+ */
+function parseMessage(userID, channelID, message) {
   users.save(userID, {}, function(err, returnedUser) {
     if (err) {console.log(err)}
     var addedObject = {};
@@ -143,9 +146,9 @@ function parseMessage(userID, channelID, message, evt) {
       }
 
       users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
-        messageEvaluator(updatedUser, addedObject, channelID, function(printMessage1) {
+        messageEvaluator(updatedUser, addedObject, function(printMessage1) {
           users.totalSwears(function(err, total) {
-            serverEvaluator(total, addedObject, channelID, function(printMessage2) {
+            serverEvaluator(total, addedObject, function(printMessage2) {
               bot.sendMessage({
                 to: channelID,
                 message: printMessage1+printMessage2
@@ -194,12 +197,9 @@ function curseTotalStringBuilder(curseObject, responseString, cb) {
   cb(responseString);
 }
 
-/**loops through each of the items in the addedObject and sends them into the message
- * decider to evaluate if a message is sent out or not. message is send out via the 
- * bot.sendMessage function
- * TODO:re-work for callback functions
+/**
  */
-function messageEvaluator(user, addedObject, channelID, cb) {
+function messageEvaluator(user, addedObject, cb) {
   var returnString = '';
   for (var i in addedObject) {
     messageDecider(user, i, user.jarObject[i]-addedObject[i], USERMILESTONES, function(result) {
@@ -209,12 +209,9 @@ function messageEvaluator(user, addedObject, channelID, cb) {
   cb(returnString);
 }
 
-/**loops through each item in the addedObject to determine if what was added is enough
- * for a milestone message. the difference for this one is that the messages here
- * are for the whole server rather than individuals
- * TODO:re-work for callback functions
+/**
  */
-function serverEvaluator(total, addedObject, channelID, cb) {
+function serverEvaluator(total, addedObject, cb) {
   var returnString = '';
   for (var i in addedObject) {
     messageDecider(total, i, total[i]-addedObject[i], SERVERMILESTONES, function(result) {
@@ -224,9 +221,8 @@ function serverEvaluator(total, addedObject, channelID, cb) {
   cb(returnString);
 }
 
-/**this function will decide what message to send out. this chooses by seeing if the user
- * crossed a threshold with the amount of times they cursed in the last scentence compared
- * with the total number they have saved up. 
+/**this function loops over the given milstones variable and determines if the difference
+ * crosses a threshold for a message then returns the message or nothing if there isn't one.
  */
 function messageDecider(user, curse, difference, MILESTONES, cb) {
   /**rework here */
