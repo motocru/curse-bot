@@ -68,6 +68,8 @@ bot.on('message', function(user, userID, channelID, message, evt) {
   /**the initial if statement will separate normal comments from the CLI arguments
    * based on if the first given character is the '?' character
    */
+  if (userID === bot.id) return;
+
   if (message.substring(0,1) == '?') {
     botCommands(message, evt, function(response) {
       bot.sendMessage({
@@ -76,7 +78,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       });
     });
 
-  } else if (userID !== bot.id){
+  } else {
     parseMessage(userID, channelID, message, evt);
   }
 });
