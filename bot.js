@@ -64,12 +64,12 @@ bot.on('ready', function(evt) {
   logger.info(`${bot.username}-(${bot.id})`);
 });
 
+/**function called every time a message is sent on servers that have curse-bot */
 bot.on('message', function(user, userID, channelID, message, evt) {
   /**the initial if statement will separate normal comments from the CLI arguments
    * based on if the first given character is the '?' character
    */
   if (userID === bot.id) return;
-
   if (message.substring(0,1) == '?') {
     botCommands(message, evt, function(response) {
       bot.sendMessage({
@@ -77,9 +77,8 @@ bot.on('message', function(user, userID, channelID, message, evt) {
         message: response
       });
     });
-
   } else {
-    parseMessage(userID, channelID, message, evt);
+    parseMessage(userID, channelID, message);
   }
 });
 
