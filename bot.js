@@ -69,94 +69,84 @@ bot.on('message', function(user, userID, channelID, message, evt) {
    * based on if the first given character is the '?' character
    */
   if (message.substring(0,1) == '?') {
-    var args = message.substring(1).split(' ');
-    var cmd = args[0].toUpperCase();
-    //console.log(evt);
-    switch(cmd) {
-      /**help message that lays out commands available */
-      case 'HELP':
-        bot.sendMessage({
-          to: channelID,
-          message: "Current Commands:\n'?total' => returns the total swear count for the whole server\n'?total {name}' => returns the swear count for a user (will take multiple users)"
-        });
-        break;
-      /**returns the total count for each swear to the command line.
-       * will return counts for individuals if they are tagged */  
-      case 'TOTAL':
-        if (evt.d.mentions[0] == undefined) {
-          swearTotaler(null, null, function(completed) {
-            bot.sendMessage({
-              to: channelID,
-              message: completed
-            });
-          });
-        } else {
-          for (var i in evt.d.mentions) {
-            swearTotaler(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick != undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, function(completed) {
-              bot.sendMessage({
-                to: channelID,
-                message: completed
-              });
-            });
-          }
-        }
-        break;
-      default: 
-        bot.sendMessage({
-          to:channelID,
-          message: "Unkown Command, try using: '?help' for command list"
-        });
-        break;
-    }
-  } else if (userID !== bot.id){
-    /**this part of the bot actually adds the curse words. each element in the message array
-     * is first stripped of any extra punctuation that might cause it not to be an exact
-     * match with one of the listed words, after that, it is compared to all hard-coded words,
-     * then determined if it matches some common suffix's such as -ing -er.
-     * it's then added to the user database
-     */
-
-    users.save(userID, {}, function(err, returnedUser) {
-      if (err) {console.log(err);}
-      var addedObject = {};
-      message = message.toUpperCase();
-      message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
-      
-      //console.log(message);
-      words = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
-
-      //console.log(words);
-      if (words !== null) {
-        if (JSON.stringify(returnedUser.jarObject) === '{}') {
-          bot.sendMessage({
-            to: channelID,
-            message: `<@!${userID}> ${curses.userMessages.message1}`
-          });
-        }
-
-        for (var i in words) {
-          if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
-            returnedUser.jarObject[words[i]]++;
-            addedObject[words[i]]++;
-          } else if (returnedUser.jarObject[words[i]]) {
-            returnedUser.jarObject[words[i]]++;
-            addedObject[words[i]] = 1;
-          } else {
-            returnedUser.jarObject[words[i]] = 1;
-            addedObject[words[i]] = 1;
-          }
-        }
-        
-        users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
-          messageEvaluator(updatedUser, addedObject, channelID);
-          users.totalSwears(function(err, total) {
-            serverEvaluator(total, addedObject, channelID);
-          });
-        });
-      }
+    botCommand(message, evt, function(response) {
+      bot.sendMessage({
+        to: channelID,
+        message: response
+      });
     });
+
+  } else if (userID !== bot.id){
+    parseMessage(userID, channelID, message, evt);
   }
 });
+
+function botCommand(message, evt, cb) {
+  var args = message.substring(1).split(' ');
+  var cmd = args[0].toUpperCase();
+
+  switch(cmd) {
+    case "HELP":
+      cb(curses.helpMessage);
+      break;
+    case "TOTAL":
+      if (evt.d.mentions[0] === undefined) {
+        swearTotaler(null, null, function(completed) {
+          cb(completed);
+        });
+      } else {
+        for (var i in evt.d.mentions) {
+          swearTotaler(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick != undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, function(completed) {
+            cb(completed);
+          });
+        }
+      }
+      break;
+    default :
+      cb("Unkown Command, try using '?help'");
+      break;
+  }
+}
+
+function parseMessage(userID, channelID, message, evt) {
+  users.save(userID, {}, function(err, returnedUser) {
+    if (err) {console.log(err)}
+    var addedObject = {};
+    message = message.toUpperCase();
+    message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
+
+    words = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
+
+    if (words !== null) {
+      if (JSON.stringify(returnedUser.jarObject) === '{}') {
+        bot.sendMessage({
+          to: channelID,
+          message: `<@!${userID}> ${curses.userMessages.message1}`
+        });
+      }
+
+      for (var i in words) {
+        if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
+          returnedUser.jarObject[words[i]]++;
+          addedObject[words[i]]++;
+        } else if (returnedUser.jarObject[words[i]]) {
+          returnedUser.jarObject[words[i]]++;
+          addedObject[words[i]] = 1;
+        } else {
+          returnedUser.jarObject[words[i]] = 1;
+          addedObject[words[i]] = 1;
+        }
+      }
+
+      users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
+        messageEvaluator(updatedUser, addedObject, channelID);
+        users.totalSwears(function(err, total) {
+          serverEvaluator(total, addedObject, channelID);
+        });
+      });
+    }
+  });
+}
 
 /**this function is called when the bot is given the '?total' command.
  * checks to see if a user was provided or if it is null to determine which of the
@@ -172,6 +162,7 @@ function swearTotaler(user, nickname, cb) {
     });
   } else {
     users.userSwears(user, function(err, curseObject) {
+      if (err) {console.log(err);}
       if (curseObject == null) {
         cb(returnString.concat(`${nickname} has not yet cursed on this server\nthey are pure of heart and free from sin`));
       } else {
