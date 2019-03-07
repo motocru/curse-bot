@@ -164,7 +164,7 @@ function swearTotaler(user, nickname, cb) {
     users.userSwears(user, function(err, curseObject) {
       if (err) {console.log(err);}
       if (curseObject == null) {
-        cb(returnString.concat(`${nickname} has not yet cursed on this server\nthey are pure of heart and free from sin`));
+        cb(returnString.concat(`${nickname} ${curses.curseFreeMessage}`));
       } else {
         stringBuilder(curseObject, returnString, function(completed) {
           cb(completed);
