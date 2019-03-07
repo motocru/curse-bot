@@ -10,6 +10,14 @@
         "type": "string"
       }
     },
+    "helpMessage": {
+      "type": "string",
+      "description": "contains the message printed out when a user issues the '?help' command to curse-bot"
+    },
+    "curseFreeMessage": {
+      "type": "string",
+      "description": "message printed when a user curse total is requested and they have not cursed"
+    },
     "userMessages": {
       "type": "object",
       "description": "an object containing all of the user-specific curse word messsages",
