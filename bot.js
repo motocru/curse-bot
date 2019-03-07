@@ -69,7 +69,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
    * based on if the first given character is the '?' character
    */
   if (message.substring(0,1) == '?') {
-    botCommand(message, evt, function(response) {
+    botCommands(message, evt, function(response) {
       bot.sendMessage({
         to: channelID,
         message: response
@@ -81,7 +81,11 @@ bot.on('message', function(user, userID, channelID, message, evt) {
   }
 });
 
-function botCommand(message, evt, cb) {
+/**botCommands serves as a way to separtate code that evaluate messages that are 
+ * treated as commands for curse-bot from code that parses normal messages
+ * for curse words
+ */
+function botCommands(message, evt, cb) {
   var args = message.substring(1).split(' ');
   var cmd = args[0].toUpperCase();
 
@@ -91,12 +95,12 @@ function botCommand(message, evt, cb) {
       break;
     case "TOTAL":
       if (evt.d.mentions[0] === undefined) {
-        swearTotaler(null, null, function(completed) {
+        serverAndUserSwearTotals(null, null, function(completed) {
           cb(completed);
         });
       } else {
         for (var i in evt.d.mentions) {
-          swearTotaler(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick != undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, function(completed) {
+          serverAndUserSwearTotals(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick != undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, function(completed) {
             cb(completed);
           });
         }
@@ -139,24 +143,29 @@ function parseMessage(userID, channelID, message, evt) {
       }
 
       users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
-        messageEvaluator(updatedUser, addedObject, channelID);
-        users.totalSwears(function(err, total) {
-          serverEvaluator(total, addedObject, channelID);
-        });
+        messageEvaluator(updatedUser, addedObject, channelID, function(printMessage1) {
+          users.totalSwears(function(err, total) {
+            serverEvaluator(total, addedObject, channelID, function(printMessage2) {
+              bot.sendMessage({
+                to: channelID,
+                message: printMessage1+printMessage2
+              });
+            });
+          });
+        }); 
       });
     }
   });
 }
 
-/**this function is called when the bot is given the '?total' command.
- * checks to see if a user was provided or if it is null to determine which of the
- * database functions to call on (user or whole server).
+/**this function is called when the bot is given the '?total' command. The function is
+ * used to build up user and server totals on a per-swear basis
  */
-function swearTotaler(user, nickname, cb) {
+function serverAndUserSwearTotals(user, nickname, cb) {
   var returnString = (user == null) ? `Server total swear count\n` : `${nickname} total swear count\n`;
   if (user == null) {
     users.totalSwears(function(err, swearObject) {
-      stringBuilder(swearObject, returnString, function(completed) {
+      curseTotalStringBuilder(swearObject, returnString, function(completed) {
         cb(completed);
       })
     });
@@ -166,7 +175,7 @@ function swearTotaler(user, nickname, cb) {
       if (curseObject == null) {
         cb(returnString.concat(`${nickname} ${curses.curseFreeMessage}`));
       } else {
-        stringBuilder(curseObject, returnString, function(completed) {
+        curseTotalStringBuilder(curseObject, returnString, function(completed) {
           cb(completed);
         });
       }
@@ -174,8 +183,11 @@ function swearTotaler(user, nickname, cb) {
   }
 }
 
-/**builds a string to return by looping over every item in the given curseObject */
-function stringBuilder(curseObject, responseString, cb) {
+/**builds a string by looping over every given item in a curse object for both a 
+ * total server count and total user count to reduce redundant code rather than 
+ * having the same thing twice for server and user
+*/
+function curseTotalStringBuilder(curseObject, responseString, cb) {
   for (var i in curseObject) {
     responseString = responseString.concat(`${i.toLowerCase()}: ${curseObject[i]}\n`);
   }
@@ -187,13 +199,14 @@ function stringBuilder(curseObject, responseString, cb) {
  * bot.sendMessage function
  * TODO:re-work for callback functions
  */
-function messageEvaluator(user, addedObject, channelID) {
+function messageEvaluator(user, addedObject, channelID, cb) {
+  var returnString = '';
   for (var i in addedObject) {
-    bot.sendMessage({
-      to: channelID,
-      message: messageDecider(user, i, user.jarObject[i]-addedObject[i], USERMILESTONES)
+    messageDecider(user, i, user.jarObject[i]-addedObject[i], USERMILESTONES, function(result) {
+      returnString = returnString.concat(result);
     });
   }
+  cb(returnString);
 }
 
 /**loops through each item in the addedObject to determine if what was added is enough
@@ -201,20 +214,21 @@ function messageEvaluator(user, addedObject, channelID) {
  * are for the whole server rather than individuals
  * TODO:re-work for callback functions
  */
-function serverEvaluator(total, addedObject, channelID) {
+function serverEvaluator(total, addedObject, channelID, cb) {
+  var returnString = '';
   for (var i in addedObject) {
-    bot.sendMessage({
-      to: channelID,
-      message: messageDecider(total, i, total[i]-addedObject[i], SERVERMILESTONES)
+    messageDecider(total, i, total[i]-addedObject[i], SERVERMILESTONES, function(result) {
+      returnString = returnString.concat(result);
     });
   }
+  cb(returnString);
 }
 
 /**this function will decide what message to send out. this chooses by seeing if the user
  * crossed a threshold with the amount of times they cursed in the last scentence compared
  * with the total number they have saved up. 
  */
-function messageDecider(user, curse, difference, MILESTONES) {
+function messageDecider(user, curse, difference, MILESTONES, cb) {
   /**rework here */
   if (user._id === undefined) {
     addressorText = 'This server';
@@ -226,8 +240,8 @@ function messageDecider(user, curse, difference, MILESTONES) {
 
   for (const mile in MILESTONES) {
     if (difference < mile && curseNum >= mile) {
-      return `${addressorText} has used ${curse.toLowerCase()} over ${mile} times, ${MILESTONES[mile]}`;
+      cb(`${addressorText} has used ${curse.toLowerCase()} over ${mile} times, ${MILESTONES[mile]}\n`);
     }
   }
-  return '';
+  cb('');
 }
