@@ -3,8 +3,8 @@ a bot to keep track of used curses and different levels of distastefulness miles
 
 ### Installation instructions
 - **npm install:** run this command to install the libraries
-- **create auth.json file:** create an auth.json file to hold the token information for the bot
-- **create curses.json file:** create a curses.json file to hold the different curses as well as user and server milestone messages
+- **create auth.json file:** create an auth.json file to hold the token information for the bot.
+- **create curses.json file:** create a curses.json file to hold the different curses as well as user and server milestone messages. (refer to the cursesSchema.json file for exact layout)
 - **node bot.js:** run this command to start up the bot
 
 ### File and Directory Information
