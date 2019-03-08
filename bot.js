@@ -114,51 +114,59 @@ function botCommands(message, evt, cb) {
 }
 
 /**this function is needed as the 'else' in the initial if-else statement 
- * for better code readability on the initial message
+ * for better code readability on the initial message. if message has any
+ * curse-words involved it sends to the next function, otherwise it returns
  */
 function parseMessage(userID, channelID, message) {
-  users.save(userID, {}, function(err, returnedUser) {
-    if (err) {console.log(err)}
+  message = message.toUpperCase();
+  message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
+  words = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
+  if (words !== null) {
+    incrementSwearsAndSendMessage(words, userID, channelID);
+  } else {
+    return;
+  }
+}
+
+/**function needed as the previous solution was to have a large if statement
+ * with no else involved. now if a message has curse words it is sent here
+ */
+function incrementSwearsAndSendMessage(words, userID, channelID) {
+  users.save(userID, {}, function(err, user) {
+    if (err) {console.log(err);}
     var addedObject = {};
-    message = message.toUpperCase();
-    message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
-
-    words = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
-
-    if (words !== null) {
-      if (JSON.stringify(returnedUser.jarObject) === '{}') {
-        bot.sendMessage({
-          to: channelID,
-          message: `<@!${userID}> ${curses.userMessages.message1}`
-        });
-      }
-
-      for (var i in words) {
-        if (returnedUser.jarObject[words[i]] && addedObject[words[i]]) {
-          returnedUser.jarObject[words[i]]++;
-          addedObject[words[i]]++;
-        } else if (returnedUser.jarObject[words[i]]) {
-          returnedUser.jarObject[words[i]]++;
-          addedObject[words[i]] = 1;
-        } else {
-          returnedUser.jarObject[words[i]] = 1;
-          addedObject[words[i]] = 1;
-        }
-      }
-
-      users.addSwear(userID, returnedUser.jarObject, function(err2, updatedUser) {
-        messageEvaluator(updatedUser, addedObject, function(printMessage1) {
-          users.totalSwears(function(err, total) {
-            serverEvaluator(total, addedObject, function(printMessage2) {
-              bot.sendMessage({
-                to: channelID,
-                message: printMessage1+printMessage2
-              });
-            });
-          });
-        }); 
+    if (JSON.stringify(user.jarObject) === '{}') {
+      bot.sendMessage({
+        to: channelID,
+        message: `<@!${userID} ${curses.userMessages.message1}>`
       });
     }
+    for (var i in words) {
+      if (user.jarObject[words[i]]) {
+        user.jarObject[words[i]]++;
+        if (addedObject[words[i]]) {
+          addedObject[words[i]]++;
+        } else {
+          addedObject[words[i]] = 1;
+        }
+      } else {
+        user.jarObject[words[i]] = 1;
+        addedObject[words[i]] = 1;
+      }
+    }
+
+    users.addSwear(userID, user.jarObject, function(err2, updatedUser) {
+      messageEvaluator(updatedUser, addedObject, function(printMessage1) {
+        users.totalSwears(function(err, total) {
+          serverEvaluator(total, addedObject, function(printMessage2) {
+            bot.sendMessage({
+              to: channelID,
+              message: printMessage1+printMessage2
+            });
+          });
+        });
+      });
+    });
   });
 }
 
@@ -198,8 +206,9 @@ function curseTotalStringBuilder(curseObject, responseString, cb) {
   cb(responseString);
 }
 
-/**
- */
+/** This function is needed to build a result string to send in a callback
+ * function to print for every milestone that was hit for single users
+*/
 function messageEvaluator(user, addedObject, cb) {
   var returnString = '';
   for (var i in addedObject) {
@@ -210,8 +219,9 @@ function messageEvaluator(user, addedObject, cb) {
   cb(returnString);
 }
 
-/**
- */
+/** This function is needed to build a result string to send in a callback 
+ * function to print for every milestone hit for the entire server
+*/
 function serverEvaluator(total, addedObject, cb) {
   var returnString = '';
   for (var i in addedObject) {
