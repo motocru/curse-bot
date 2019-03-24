@@ -1,77 +1,58 @@
 var db = require('./db');
-var User = require('./userModel');
-var mongo = require('mongodb');
+//var User = require('./userModel');
+var servers = require('./servers');
+//var mongo = require('mongodb');
 
-/**adds a user to the databse  */
-function save(id, swear, cb) {
-  db.collection('users').findOne({'_id': id}, function(err, existingUser) {
+function findUserById(guild, id, cb) {
+  db.collection('servers').findOne({'_id': guild}, function(err, foundServer) {
     if (err) {console.log(err);}
-    if (existingUser == null) {
-      db.collection('users').insertOne(new User(id, swear), function(err2, newUser) {
-        cb(err2, newUser.ops[0]);
-      });
-    } else {
-      cb(err, existingUser);
-    }
-  });
-}
-module.exports.save = save;
-
-/**find a user by a given userId and return it*/
-function findByID(id, cb) {
-  db.collection('users').findOne({'_id': id}, function(err, foundUser) {
-    cb(err, foundUser);
-  });
-}
-module.exports.findByID = findByID;
-
-/**finds a user via their Id and loops over the stored swear object associated with the user
- * then increments the swear counter based upon the amounts of times the user used that
- * specific swear word. 
- */
-function addSwear(id, swearObject, cb) {
-  findByID(id, function(err, foundUser) {
-    if (err) {console.log(err);}
-    if (foundUser == null) {console.log(`COULD NOT FIND USER ${id}`);}
+    if (foundServer === null) {cb(err, null)}
     else {
-      var newValues = {$set: {'jarObject': swearObject}};
-      db.collection('users').updateOne({'_id': id}, newValues, function(err2, updateStatus) {
-        if (err2) {console.log(err2);}
-        findByID(id, function(err3, updatedUser) {
-          if (err3) {console.log(err3);}
-          cb(err3, updatedUser);
-        });
-      });
+      var result = foundServer.users.filter(user => user.id === id);
+      cb(err, result[0]);
     }
   });
 }
-module.exports.addSwear = addSwear;
+module.exports.findUserById = findUserById;
 
-function userSwears(id, cb) {
-  findByID(id, function(err, foundUser) {
+function getUserServerSwearList(guild, id, cb) {
+  findUserById(guild, id, function(err, foundUser) {
     if (err) {console.log(err);}
-    if (foundUser == null) {
+    if (foundUser === null || foundUser === undefined) {
       cb(err, null);
     } else {
       cb(err, foundUser.jarObject);
-    } 
+    }
   });
 }
-module.exports.userSwears = userSwears;
+module.exports.getUserServerSwearList = getUserServerSwearList;
 
-/**returns all swears recorded by every user in the database */
-function totalSwears(cb) {
-  var totalObject = {};
-  db.collection('users').find({}).toArray(function(err, docs) {
+//TODO: function not completed
+function getUserTotalSwearList(id, cb) {
+  var totalSwearList = {};
+  db.collection('servers').find({}).toArray(function(err, docs) {
     if (err) {console.log(err);}
-    for (var i in docs) {
-      for (var j in docs[i].jarObject) {
-        //console.log(docs[i].jarObject[j]);
-        if (totalObject[j]) {totalObject[j]+= docs[i].jarObject[j];}
-        else {totalObject[j] = docs[i].jarObject[j];}
+    console.log(docs);
+    cb(err, docs);
+  });
+}
+module.exports.getUserTotalSwearList = getUserTotalSwearList;
+
+function swearCountByServer(guild, id, cb) {
+  servers.findById(guild, function(err, server) {
+    if (err) {console.log(err);}
+    var swearTotal = 0;
+    if (server === null) cb(err, 0);
+    else {
+      var user = server.users.filter(user => user.id === id);
+      if (user[0] === undefined) cb(err, 0);
+      else {
+        for (var i in user[0].jarObject) {
+          swearTotal += user[0].jarObject[i];
+        }
+        cb(err, swearTotal);
       }
     }
-    cb(err, totalObject);
   });
 }
-module.exports.totalSwears = totalSwears;
+module.exports.swearCountByServer = swearCountByServer;
