@@ -8,16 +8,16 @@ var servers = require('./db/servers');
 /**adding the  message constants below */
 const USERMILESTONES = {
   10: curses.userMessages.message2,
-  50: curses.userMessages.message3,
-  100: curses.userMessages.message4,
-  200: curses.userMessages.message5,
-  250: curses.userMessages.message6,
-  350: curses.userMessages.message7,
-  500: curses.userMessages.message8,
-  600: curses.userMessages.message9,
-  700: curses.userMessages.message10,
-  800: curses.userMessages.message11,
-  1000: curses.userMessages.message12
+  25: curses.userMessages.message3,
+  50: curses.userMessages.message4,
+  75: curses.userMessages.message5,
+  100: curses.userMessages.message6,
+  150: curses.userMessages.message7,
+  200: curses.userMessages.message8,
+  300: curses.userMessages.message9,
+  400: curses.userMessages.message10,
+  450: curses.userMessages.message11,
+  500: curses.userMessages.message12
 }
 
 const SERVERMILESTONES = {
