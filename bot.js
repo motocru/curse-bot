@@ -85,6 +85,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
           to: channelID,
           message: `${curses.botResponses[botResponse()]}`
         });
+        break;
       }
     }
     parseMessage(userID, channelID, message, evt.d.guild_id);
