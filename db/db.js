@@ -7,10 +7,10 @@ mongoClient.connect('mongodb://localhost:27017', {useNewUrlParser: true}, functi
   assert.equal(null, err);
   console.log('database connection made');
 
-  db = database.db('users');
+  db = database.db('servers');
   /*below is a code to delete the users table so i can just un-comment this
     rather than type it out everytime*/
-    //db.collection('users').drop(function(err, delOk) {
+    //db.collection('servers').drop(function(err, delOk) {
     //     if (err) throw err;
     //     if (delOk) console.log('users database dropped');
     //});
