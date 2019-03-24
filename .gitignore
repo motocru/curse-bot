@@ -5,5 +5,6 @@ node_modules/
 auth.json
 curses.json
 
-#there's no need to bring in the note.txt file either
+#there's no need to bring in the note.txt or test.js file either
 note.txt
+test.js
