@@ -79,6 +79,14 @@ bot.on('message', function(user, userID, channelID, message, evt) {
       });
     });
   } else {
+    for (var i in evt.d.mentions) {
+      if (evt.d.mentions[i].id === bot.id) {
+        bot.sendMessage({
+          to: channelID,
+          message: `${curses.botResponses[botResponse()]}`
+        });
+      }
+    }
     parseMessage(userID, channelID, message, evt.d.guild_id);
   }
 });
@@ -122,14 +130,6 @@ function botCommands(message, evt, channelID, cb) {
         }
       });
       break;  
-    case "TEST":
-      //console.log(evt);
-      //console.log(channelID);
-      bot.sendMessage({
-        to: channelID,
-        message: `<@!${evt.d.guild_id}>`
-      });
-      break;
     default :
       cb("Unkown Command, try using '?help'");
       break;
@@ -150,6 +150,10 @@ function parseMessage(userID, channelID, message, guild) {
   } else {
     return;
   }
+}
+
+function botResponse() {
+  return Math.floor(Math.random() * Math.floor(curses.botResponses.length));
 }
 
 /**function needed as the previous solution was to have a large if statement
