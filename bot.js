@@ -312,7 +312,11 @@ function messageDecider(user, curse, difference, MILESTONES, cb) {
 
   for (const mile in MILESTONES) {
     if (difference < mile && curseNum >= mile) {
-      cb(`${addressorText} has used ${curse.toLowerCase()} over ${mile} times, ${MILESTONES[mile]}\n`);
+      if (mile == 1) {
+        cb(`${addressorText} has used ${curse.toLowerCase()} for the first time, ${MILESTONES[mile]}\n`);
+      } else {
+        cb(`${addressorText} has used ${curse.toLowerCase()} over ${mile} times, ${MILESTONES[mile]}\n`);
+      }
     }
   }
   cb('');
