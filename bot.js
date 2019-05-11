@@ -97,8 +97,9 @@ bot.on('message', function(user, userID, channelID, message, evt) {
  * for curse words
  */
 function botCommands(message, evt, channelID, cb) {
+  message = message.toUpperCase();
   var args = message.substring(1).split(' ');
-  var cmd = args[0].toUpperCase();
+  var cmd = args[0];
 
   switch(cmd) {
     case "HELP":
@@ -112,6 +113,26 @@ function botCommands(message, evt, channelID, cb) {
           countResponseMessage(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick !== undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, evt.d.guild_id, cb);
         }
       }
+      break;
+    case "WORDCOUNT":
+      var wordArray = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
+      if (args.length <= 1 || wordArray === null) cb(curses.SwearWordMissingMessage);
+      else {
+        if (evt.d.mentions[0] === undefined) {
+          wordCountResponseMessage(null, null, evt.d.guild_id, wordArray, cb);
+        } else {
+          for (var i in evt.d.mentions) {
+            wordCountResponseMessage(evt.d.mentions[i].id, (evt.d.mentions[i].member.nick !== undefined) ? evt.d.mentions[i].member.nick : evt.d.mentions[i].username, evt.d.guild_id, wordArray, cb);
+          }
+        }
+      }
+      /** 
+      if (evt.d.mentions[0] === undefined) {
+        singleWordCountResponseMessage(null, null, evt.d.guild_id, cb);
+      } else {
+        singleWordCountResponseMessage();
+      }
+      */
       break;  
     case "TOTAL":
       if (evt.d.mentions[0] === undefined) {
@@ -268,6 +289,38 @@ function countResponseMessage(user, nickname, guild, cb) {
     users.swearCountByServer(guild, user, function(err, count) {
       if (count === 0) cb(responseString+`${nickname} has not cursed on this server yet`);
       else cb(responseString+count);
+    });
+  }
+}
+
+/**This function will take a list of swear words and returns the used counts for each
+ * of the words in the list respectively. similar to other functions, this one will
+ * perform the search for single or multiple users
+ */
+function wordCountResponseMessage(user, nickname, guild, wordArray, cb) {
+  var responseString = (user === null) ? `specific word counts for the server:\n` : `specific word counts for ${nickname}:\n`;
+  if (user === null) {
+    //console.log(wordArray);
+    servers.specificSwearCountList(guild, wordArray, function(err, list) {
+      if (list === null || JSON.stringify(list) === '{}') {cb(`${responseString}No one has used the curse word(s) given`);}
+      else {
+        sortCurseList(list, function(sorted) {
+          curseTotalStringBuilder(sorted, responseString, function(completed) {
+            cb(completed);
+          });
+        });
+      }
+    });
+  } else {
+    users.specificSwearCountList(guild, user, wordArray, function(err, list) {
+      if (list === null || JSON.stringify(list) === '{}') {cb(`${responseString}${nickname} has not used the curse word(s) given`);}
+      else {
+        sortCurseList(list, function(sorted) {
+          curseTotalStringBuilder(sorted, responseString, function(completed) {
+            cb(completed);
+          });
+        });
+      }
     });
   }
 }

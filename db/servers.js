@@ -109,6 +109,26 @@ function returnSealBreaker(guild, cb) {
 }
 module.exports.returnSealBreaker = returnSealBreaker;
 
+/**loops through the list of swears to search for and then returrns the server based
+ * total for the swears in the provided list
+ */
+function specificSwearCountList(guild, list, cb) {
+  findById(guild, function(err, server) {
+    if (err) {console.log(err);}
+    if (server === null) (cb(err, null));
+    else {
+      var curses = {};
+      for (var i in server.users) {
+        for (var j in server.users[i].jarObject) {
+          if (list.indexOf(j) > -1) {curses[j] = (curses[j]) ? curses[j] += server.users[i].jarObject[j] : server.users[i].jarObject[j];}
+        }
+      }
+      cb(err, curses);
+    }
+  });
+}
+module.exports.specificSwearCountList = specificSwearCountList;
+
 /**NON-EXPORTED FUNCTIONS */
 function updateUserListAndReturnUser(guild, id, userList, cb) {
   var newUserArray = {$set: {'users': userList}};

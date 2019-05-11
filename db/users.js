@@ -56,3 +56,18 @@ function swearCountByServer(guild, id, cb) {
   });
 }
 module.exports.swearCountByServer = swearCountByServer;
+
+function specificSwearCountList(guild, id, list, cb) {
+  findUserById(guild, id, function(err, user) {
+    if (err) {console.log(err);}
+    if (user === null || user === undefined) {cb(err, null);}
+    else {
+      var curses = {};
+      for (var i in user.jarObject) {
+        if (list.indexOf(i) > -1) {curses[i] = (curses[i]) ? curses[i] += user.jarObject[i] : user.jarObject[i];}
+      }
+      cb(err, curses);
+    }
+  });
+}
+module.exports.specificSwearCountList = specificSwearCountList;
