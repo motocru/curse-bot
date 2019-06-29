@@ -12,4 +12,4 @@ a bot to keep track of used curses and different levels of distastefulness miles
 - **bot.js:** houses the main code for the bot that parses messages and sends messages to servers and users when milestones are hit
 - **package.json:** holds project-wide information
 - **cursesSchema.json** notes the schema of the curses.json file used by the server but is not present in this repo (for obvious vulgarity related reasons).
-- **restart.sh:** A script that pulls the current master for the program and information files and starts the server. This logic adheres to my file structure for the droplet that curse-bot is hostyed on, use is not recommended.
+- **restart.sh:** A script that pulls the current master for the program and information files, verifies the integrity of curses.json and starts the server. This logic adheres to my file structure for the droplet that curse-bot is hosted on, use is not recommended unless file structure is similar.
