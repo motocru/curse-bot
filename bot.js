@@ -322,8 +322,8 @@ function swearCountSorter(totals) {
   totals.sort(function(a,b) {
     return b.count-a.count;
   });
-  for (var i in totals) {
-    responseString += `${parseInt(i+1,10).toString()}. <@!${totals[i].id}> with: ${totals[i].count} total swears\n`;
+  for (var i = 0; i < totals.length; i++) {
+    responseString += `${i+1}. <@!${totals[i].id}> with: ${totals[i].count} total swears\n`;
   }
   return responseString;
 }
