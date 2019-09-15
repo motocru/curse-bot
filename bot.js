@@ -320,10 +320,10 @@ function largestUserSwearCount(guild, cb) {
 function swearCountSorter(totals) {
   var responseString = '';
   totals.sort(function(a,b) {
-    return a.count-b.count;
+    return b.count-a.count;
   });
   for (var i in totals) {
-    responseString += `${(i+1).toString().substr(1)}. <@!${totals[i].id}> with: ${totals[i].count} total swears`;
+    responseString += `${(i+1).toString().substr(1)}. <@!${totals[i].id}> with: ${totals[i].count} total swears\n`;
   }
   return responseString;
 }
