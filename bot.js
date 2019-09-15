@@ -152,6 +152,9 @@ function botCommands(message, evt, channelID, cb) {
         }
       });
       break;  
+    case "WINNER":
+      largestUserSwearCount(evt.d.guild_id, cb);
+      break;
     default :
       cb("Unkown Command, try using '?help'");
       break;
@@ -291,6 +294,27 @@ function countResponseMessage(user, nickname, guild, cb) {
       else cb(responseString+count);
     });
   }
+}
+
+/**This function will loop through each user on a server and 
+ * return the user with the largest count of swears
+ */
+function largestUserSwearCount(guild, cb) {
+  var swearHighScore = {id: 0, count: 0};
+  servers.findUsersByServerId(guild, function(err, userslist) {
+    if (userslist === null || userslist === undefined) {cb('No one has cursed on this server yet')}
+    for (var i in userslist) {
+      var userSwearCount = 0;
+      for (var j in userslist[i].jarObject) {
+        userSwearCount += userslist[i].jarObject[j];
+      }
+      if (userSwearCount > swearHighScore.count) {
+        swearHighScore.id = userslist[i].id;
+        swearHighScore.count = userSwearCount;
+      }
+    }
+    cb(`<@!${swearHighScore.id}> has the highest swear count on the server with: ${swearHighScore.count}`);
+  });
 }
 
 /**This function will take a list of swear words and returns the used counts for each

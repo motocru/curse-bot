@@ -3,6 +3,7 @@ var db = require('./db');
 var servers = require('./servers');
 //var mongo = require('mongodb');
 
+/**Returns the specific user object searched for */
 function findUserById(guild, id, cb) {
   db.collection('servers').findOne({'_id': guild}, function(err, foundServer) {
     if (err) {console.log(err);}

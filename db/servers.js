@@ -97,6 +97,7 @@ function serverSwearCount(guild, cb) {
 }
 module.exports.serverSwearCount = serverSwearCount;
 
+/**Returns the first person to swear on a server */
 function returnSealBreaker(guild, cb) {
   findById(guild, function(err, server) {
     if (err) {console.log(err);}
