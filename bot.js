@@ -152,7 +152,7 @@ function botCommands(message, evt, channelID, cb) {
         }
       });
       break;  
-    case "WINNER":
+    case "RANK":
       largestUserSwearCount(evt.d.guild_id, cb);
       break;
     default :
@@ -297,10 +297,10 @@ function countResponseMessage(user, nickname, guild, cb) {
 }
 
 /**This function will loop through each user on a server and 
- * return the user with the largest count of swears
+ * return a rank ordered list of total counts
  */
 function largestUserSwearCount(guild, cb) {
-  var swearHighScore = {id: 0, count: 0};
+  var swearCountTotals = [];
   servers.findUsersByServerId(guild, function(err, userslist) {
     if (userslist === null || userslist === undefined) {cb('No one has cursed on this server yet')}
     for (var i in userslist) {
@@ -308,13 +308,24 @@ function largestUserSwearCount(guild, cb) {
       for (var j in userslist[i].jarObject) {
         userSwearCount += userslist[i].jarObject[j];
       }
-      if (userSwearCount > swearHighScore.count) {
-        swearHighScore.id = userslist[i].id;
-        swearHighScore.count = userSwearCount;
-      }
+      swearCountTotals.push({id: userslist[i].id, count: userSwearCount});
     }
-    cb(`<@!${swearHighScore.id}> has the highest swear count on the server with: ${swearHighScore.count}`);
+    cb(swearCountSorter(swearCountTotals));
   });
+}
+
+/**This function will organize the list of uiser swear counts with the highest 
+ * at the top nad lowest at the bottom and return is at a string
+ */
+function swearCountSorter(totals) {
+  var responseString = '';
+  totals.sort(function(a,b) {
+    return a.count-b.count;
+  });
+  for (var i in totals) {
+    responseString += `${(i+1).toString().substr(1)}. <@!${totals[i].id}> with: ${totals[i].count} total swears`;
+  }
+  return responseString;
 }
 
 /**This function will take a list of swear words and returns the used counts for each
