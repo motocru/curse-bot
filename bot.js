@@ -153,7 +153,15 @@ function botCommands(message, evt, channelID, cb) {
       });
       break;  
     case "RANK":
-      largestUserSwearCount(evt.d.guild_id, cb);
+      if (args.length <= 1) {
+        largestUserTotalSwearCount(evt.d.guild_id, cb);
+      } else {
+        var wordArray = message.match(new RegExp(`\\b(${curses.curses.join("|")})\\b`,"gi"));
+        if (wordArray === null) cb(curses.SwearWordMissingMessage);
+        else {
+          largestUserSingleSwearCount(evt.d.guild_id, wordArray, cb)
+        }
+      }
       break;
     default :
       cb("Unkown Command, try using '?help'");
@@ -256,6 +264,9 @@ function serverAndUserSwearList(user, nickname, guild, cb) {
   }
 }
 
+/**Creates an array from the object of curses and then sorts
+ * that array from highest to lowest in number of uses
+ */
 function sortCurseList(curses, cb) {
   var sorted = [];
   for (var curse in curses) {
@@ -299,7 +310,7 @@ function countResponseMessage(user, nickname, guild, cb) {
 /**This function will loop through each user on a server and 
  * return a rank ordered list of total counts
  */
-function largestUserSwearCount(guild, cb) {
+function largestUserTotalSwearCount(guild, cb) {
   var swearCountTotals = [];
   servers.findUsersByServerId(guild, function(err, userslist) {
     if (userslist === null || userslist === undefined) {cb('No one has cursed on this server yet')}
@@ -312,6 +323,36 @@ function largestUserSwearCount(guild, cb) {
     }
     cb(swearCountSorter(swearCountTotals));
   });
+}
+
+/**Loops thorugh each user to find the total usage for each swear word specified and 
+ * then sorts the total number of uses for each specific word by the id of the person
+ * from the highest to the lowest for each word
+ */
+function largestUserSingleSwearCount(guild, wordArray, cb) {
+  var swearCountTotals = [];
+  servers.findUsersByServerId(guild, function(err, userslist) {
+    for (var i in wordArray) {
+      var swearArray = [];
+      for (var j in userslist) {
+        if (userslist[j].jarObject[wordArray[i]] !== undefined) {
+          swearArray.push({id: userslist[j].id, count: userslist[j].jarObject[wordArray[i]]});
+        }
+      }
+      if (swearArray.length > 0) swearCountTotals.push({word: wordArray[i], arr: swearArray});
+    }
+    var responseString = '**Rankings for specific curse words:**\n';
+    for (var i in swearCountTotals) {
+      responseString += `**${swearCountTotals[i].word}**\n`;
+      responseString += swearCountSorter(swearCountTotals[i].arr);
+    }
+    cb(responseString);
+  });
+}
+
+function singleSwearCountSorter(totals) {
+  var responseString = '';
+
 }
 
 /**This function will organize the list of uiser swear counts with the highest 
