@@ -342,17 +342,15 @@ function largestUserSingleSwearCount(guild, wordArray, cb) {
       if (swearArray.length > 0) swearCountTotals.push({word: wordArray[i], arr: swearArray});
     }
     var responseString = '**Rankings for specific curse words:**\n';
-    for (var i in swearCountTotals) {
-      responseString += `**${swearCountTotals[i].word}**\n`;
-      responseString += swearCountSorter(swearCountTotals[i].arr);
+    if (swearCountTotals.length <= 0) cb('No one on this server has used the specified swear word(s)');
+    else {
+      for (var i in swearCountTotals) {
+        responseString += `**${swearCountTotals[i].word}**\n`;
+        responseString += swearCountSorter(swearCountTotals[i].arr);
+      }
+      cb(responseString);
     }
-    cb(responseString);
   });
-}
-
-function singleSwearCountSorter(totals) {
-  var responseString = '';
-
 }
 
 /**This function will organize the list of uiser swear counts with the highest 
