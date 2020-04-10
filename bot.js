@@ -65,6 +65,18 @@ bot.on('ready', function(evt) {
   logger.info(`${bot.username}-(${bot.id})`);
 });
 
+/**If a disconnect from the server is detected, this function will attempt to reconnect to the server */
+bot.on("disconnect", function() {
+  console.log('bot disconnected from the server, attempting to re-connect');
+  bot.connect();
+  console.log(`If still connected - ${bot.username} was able to reconnect through 'connect command'`);
+});
+
+/**Not sure what presence does at this point, leaving in for additional logging purposes */
+bot.on("presence", function(user, userID, status, game, event) {
+  console.log(`${user} is now: ${status}`);
+});
+
 /**function called every time a message is sent on servers that have curse-bot */
 bot.on('message', function(user, userID, channelID, message, evt) {
   /**the initial if statement will separate normal comments from the CLI arguments
