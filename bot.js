@@ -83,7 +83,7 @@ bot.on('message', function(user, userID, channelID, message, evt) {
    * based on if the first given character is the '?' character
    */
   if (userID === bot.id) return;
-  if (message.substring(0,1) == '?') {
+  if (/^\?\w+/.test($message)) {
     botCommands(message, evt, channelID, function(response) {
       bot.sendMessage({
         to: channelID,
