@@ -1,15 +1,33 @@
 {
   "name": "curse-bot",
   "version": "1.0.0",
-  "description": "a bot to keep track of cursing milestones",
-  "author": "Motocru",
+  "description": "a bot to keep track of used curses and different levels of distastefulness milestones for discord servers",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch bot.ts --exec ts-node bot.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/motocru/curse-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/motocru/curse-bot/issues"
+  },
+  "homepage": "https://github.com/motocru/curse-bot#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.18",
+    "ts-node": "^10.8.2",
+    "typescript": "^4.7.4"
+  },
   "dependencies": {
-    "@types/winston": "^2.4.4",
-    "assert": "^1.4.1",
-    "discord.io": "github:woor/discord.io#gateway_v6",
-    "jq": "^1.7.2",
-    "mongodb": "^3.1.13",
-    "winston": "^3.2.1",
-    "ws": "^7.0.1"
+    "@types/node": "^18.0.1",
+    "@types/ws": "^8.5.3",
+    "discord.js": "^13.8.1",
+    "mongodb": "^4.7.0",
+    "tsc": "^2.0.4"
   }
 }
