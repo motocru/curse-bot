@@ -1,5 +1,6 @@
 import { db } from './db';
 import { Server } from './dataTypes';
+import { Guild } from 'discord.js';
 
 /**
  * Gets the total number of times any curse words were used on the server
@@ -24,4 +25,19 @@ export const getServerSepecificSwearCount = async (guildId: string, swearWord: s
         swearCount += x?.swears[swearWord] ?? 0;
     });
     return swearCount;
+}
+
+export const getServerSwearTotal = async (guildId: string): Promise<Record<string, number>> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    let serverRecords: Record<string, number> = {};
+    server?.users.forEach(x => {
+        for (const swear in x?.swears) {
+            if (serverRecords[swear] === null || serverRecords[swear] === undefined) {
+                serverRecords[swear] = x?.swears[swear] ?? 0
+            } else {
+                serverRecords[swear] += x?.swears[swear] ?? 0; //is it possible to get away with just this?
+            }
+        }
+    });
+    return serverRecords;
 }

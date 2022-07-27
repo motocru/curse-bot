@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/motocru/curse-bot#readme",
   "devDependencies": {
+    "@types/mongodb": "^4.0.7",
     "nodemon": "^2.0.18",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4"

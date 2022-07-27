@@ -91,7 +91,6 @@ async function handleCommand(msg: Message) {
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
-            console.log(args);
             if (args.length <= 1 || Curses['curses'] === null || Curses['curses'] === undefined || !Curses['curses'].includes("SHIT")) {
                 msg.channel.send(Curses['SwearWordMissingMessage']);
                 return;
@@ -100,6 +99,13 @@ async function handleCommand(msg: Message) {
 
             } else {
                 //msg.channel.send(await getWordCountForServer(msg.guildId, msg.guild?.name, ));
+            }
+            break;
+        case "TOTAL":
+            if (msg.mentions.users.size > 0) {
+                //Total swear count for the users mentioned
+            } else {
+                //Total swear count for the entire server
             }
             break;
         default:
@@ -130,4 +136,9 @@ async function getWordCountForUser(guildId: string, userId: string, nickname: st
     let responseString = `Swear word counts for ${nickname}:\n`;
     const swearCount: number = await users.getUserSpecificSwearWordCount(guildId!, userId, curseWord);
     return responseString += swearCount > 0 ? `${nickname} has not yet uttered '${curseWord}'` : swearCount;
+}
+
+async function getTotalSwearCountForServer(guildId: string, guildName: string) {
+    let responseString = `Swear Use total for ${guildName}:\n`;
+    
 }
