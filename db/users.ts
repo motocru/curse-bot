@@ -16,3 +16,9 @@ export const getUserSpecificSwearWordCount = async (guildId: string, userId: str
     const user = server?.users.find(u => u.id === userId);
     return user?.swears[swearWord] ?? 0;
 }
+
+export const getUserSwearRecord = async (guildId: string, userId: string): Promise<Record<string, number>> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const user = server?.users.find(u => u.id === userId);
+    return user?.swears ?? {};
+}

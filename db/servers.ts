@@ -32,11 +32,7 @@ export const getServerSwearTotal = async (guildId: string): Promise<Record<strin
     let serverRecords: Record<string, number> = {};
     server?.users.forEach(x => {
         for (const swear in x?.swears) {
-            if (serverRecords[swear] === null || serverRecords[swear] === undefined) {
-                serverRecords[swear] = x?.swears[swear] ?? 0
-            } else {
-                serverRecords[swear] += x?.swears[swear] ?? 0; //is it possible to get away with just this?
-            }
+            serverRecords[swear] += x?.swears[swear] ?? 0;
         }
     });
     return serverRecords;

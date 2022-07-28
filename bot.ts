@@ -140,5 +140,21 @@ async function getWordCountForUser(guildId: string, userId: string, nickname: st
 
 async function getTotalSwearCountForServer(guildId: string, guildName: string) {
     let responseString = `Swear Use total for ${guildName}:\n`;
-    
+    const serverSwearTotals: Record<string, number> = await servers.getServerSwearTotal(guildId);
+    const sortedSwearArray: Array<{curse: string, count: number}> = sortSwearRecord(serverSwearTotals);
+    sortedSwearArray.forEach(x => {
+        responseString += `${x.curse}: ${x.count}`;
+    });
+    return responseString;
+}
+
+function sortSwearRecord(swearRecord: Record<string, number>): Array<{curse: string, count: number}> {
+    let sorted: Array<{curse: string, count: number}> = [];
+    for (var curse in swearRecord) {
+        sorted.push({ curse, count: swearRecord[curse]});
+    }
+    sorted.sort(function(a, b) {
+        return b.count - a.count;
+    });
+    return sorted;
 }
