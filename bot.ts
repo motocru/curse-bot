@@ -39,11 +39,22 @@ const USERMILESTONES = {
   }
 
 const permissions = new Permissions(['MANAGE_CHANNELS', 'EMBED_LINKS', 'READ_MESSAGE_HISTORY', 'SEND_MESSAGES']);
-
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]});
+let serverRecords: Record<string, Record<string, number>> = {};
 
 client.once('ready', () => {
     console.log('Bot is ready');
+    client.guilds.fetch().then(guilds => {
+        guilds.forEach(async guild => {
+            //collect each custom swear list for the server and build the overall records
+            let serverSwears = await servers.getServerCustomSwearList(guild.id);
+            let serverRecord: Record<string, number> = {};
+            serverSwears.forEach(swear => {
+                serverRecord[swear] = 0;
+            });
+            serverRecords[guild.id] = serverRecord;
+        });
+    })
 });
 
 client.on('messageCreate', handleMessage);
@@ -68,7 +79,7 @@ async function handleMessage(msg: Message) {
 
 async function handleCommand(msg: Message) {
     const capMessage = msg.content.toLocaleUpperCase();
-    const args = capMessage.substring(1).split(' ');
+    let args = capMessage.substring(1).split(' ');
     const cmd = args[0];
 
     switch(cmd) {
@@ -89,24 +100,64 @@ async function handleCommand(msg: Message) {
                 msg.channel.send(await getCurseCountForServer(msg?.guildId, msg.guild?.name));
             }
             break;
+        //Adds a new curse word to the database
+        case "ADD":
+            break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
-            if (args.length <= 1 || Curses['curses'] === null || Curses['curses'] === undefined || !Curses['curses'].includes("SHIT")) {
-                msg.channel.send(Curses['SwearWordMissingMessage']);
+            if (args.length <= 1 || Curses['curses'] === null || Curses['curses'] === undefined) {
+                msg.channel.send(Curses.SwearWordMissingMessage);
                 return;
             }
+            //splice the first element since it's the command
+            args.splice(0, 1);
+            //splice out any references to users
+            args = args.filter(x => !x.match(/<@[0-9]+>/gi));
+            console.log(args);
             if (msg.mentions.users.size > 0) {
+                msg.mentions.users.forEach(user => {
 
+                });
             } else {
-                //msg.channel.send(await getWordCountForServer(msg.guildId, msg.guild?.name, ));
+                args.forEach(async curse => {
+                    //determine if the curse word exists in our list
+                    if (CheckIfCurseWordValid(curse)) {
+                        msg.channel.send(await getWordCountForServer(msg?.guildId!, msg.guild?.name!, curse));
+                    }
+                });
+            }
+
+            function CheckIfCurseWordValid(curse: string): boolean {
+                if (!Curses.curses.includes(curse))  {
+                    msg.channel.send(`${curse} is not a valid curse word`);
+                    return false;
+                } else {
+                    return true;
+                }
             }
             break;
         case "TOTAL":
             if (msg.mentions.users.size > 0) {
                 //Total swear count for the users mentioned
+                msg.mentions.users.forEach(async user => {
+                    const guildUser = msg.guild?.members.resolve(user.id);
+                    msg.channel.send(await getTotalSwearCountForUser(msg?.guildId!, msg.author.id, guildUser!.displayName));
+                });
             } else {
                 //Total swear count for the entire server
+                msg.channel.send(await getTotalSwearCountForServer(msg?.guildId!, msg.guild?.name!));
             }
+            break;
+        case "FIRST":
+            const sealBreaker: string | null = await servers.getServerSealBreaker(msg?.guildId!);
+            if (sealBreaker == null) {
+                msg.channel.send('No one has cursed on this server yet');
+            } else {
+                msg.channel.send(`<@!${sealBreaker}> ${Curses.sealBreakerMessage}`);
+            }
+            break;
+        case "RANK":
+
             break;
         default:
             msg.channel.send("Unkown Command, try using '?help'");
@@ -138,14 +189,28 @@ async function getWordCountForUser(guildId: string, userId: string, nickname: st
     return responseString += swearCount > 0 ? `${nickname} has not yet uttered '${curseWord}'` : swearCount;
 }
 
-async function getTotalSwearCountForServer(guildId: string, guildName: string) {
-    let responseString = `Swear Use total for ${guildName}:\n`;
+async function getTotalSwearCountForServer(guildId: string, guildName: string): Promise<string> {
+    let responseString = `Swear totals for ${guildName}:\n`;
     const serverSwearTotals: Record<string, number> = await servers.getServerSwearTotal(guildId);
     const sortedSwearArray: Array<{curse: string, count: number}> = sortSwearRecord(serverSwearTotals);
     sortedSwearArray.forEach(x => {
         responseString += `${x.curse}: ${x.count}`;
     });
     return responseString;
+}
+
+async function getTotalSwearCountForUser(guildId: string, userId: string, nickname: string) {
+    let responseString = `Swear totals for ${nickname}:\n`;
+    const userSwearTotals: Record<string, number> = await users.getUserSwearRecord(guildId, userId);
+    const sortedSwearArray: Array<{curse: string, count: number}> = sortSwearRecord(userSwearTotals);
+    sortedSwearArray.forEach(x => {
+        responseString += `${x.curse}: ${x.count}`;
+    });
+    return responseString;
+}
+
+async function getUserWhoFirstSwore(guildId: string) {
+    let responseString = ``;
 }
 
 function sortSwearRecord(swearRecord: Record<string, number>): Array<{curse: string, count: number}> {

@@ -4,7 +4,6 @@
   "description": "a bot to keep track of used curses and different levels of distastefulness milestones for discord servers",
   "main": "bot.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch bot.ts --exec ts-node bot.ts"
   },
   "repository": {

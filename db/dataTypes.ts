@@ -1,6 +1,7 @@
 export interface Server {
     _id: string;
     users: User[];
+    swears: string[];
     firstCurseUserId: string;
 }
 
