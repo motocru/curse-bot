@@ -49,12 +49,35 @@ export const getServerSwearTotal = async (guildId: string): Promise<Record<strin
     return serverRecords;
 }
 
+/**
+ * Returns the discord Id of who swore first on a server
+ * @param guildId Id of the server being checked
+ * @returns Id of the user who first swore on a server
+ */
 export const getServerSealBreaker = async (guildId: string): Promise<string | null> => {
     const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
     return server?.firstCurseUserId ?? null;
 }
 
+/**
+ * Retruns the list of custom swears a server has
+ * @param guildId Id of the server being checked
+ * @returns String list of custom swears added to a server
+ */
 export const getServerCustomSwearList = async (guildId: string): Promise<string[]> => {
     const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
     return server?.swears ?? [];
+}
+
+/**
+ * Adds a list of custom swears to a server and returns fully formed swear list
+ * @param guildId Id of the server being checked
+ * @param swears string array of swears to add to the server
+ * @returns fully updated list of custom swears on a server
+ */
+export const addToServerCustomSwearList = async (guildId: string, swears: string[]): Promise<string[]> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const updatedSwears = server?.swears.concat(swears);
+    await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {swears: updatedSwears}});
+    return updatedSwears ?? [];
 }
