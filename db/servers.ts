@@ -1,5 +1,6 @@
 import { db } from './db';
 import { Server } from './dataTypes';
+import { totalUserSwearCount, getUserSpecificSwearWordCount } from './users';
 import { Guild } from 'discord.js';
 
 /**
@@ -80,4 +81,35 @@ export const addToServerCustomSwearList = async (guildId: string, swears: string
     const updatedSwears = server?.swears.concat(swears);
     await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {swears: updatedSwears}});
     return updatedSwears ?? [];
+}
+
+/**
+ * Gets a record of each user and the total number of times each has swore on the server
+ * @param guildId Id of the server rankings being retrieved for
+ * @returns Record of each user and the total amount of times a user swore
+ */
+export const getServerSwearUseRankings = async (guildId: string): Promise<Record<string, number>> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    let userSwearTotals: Record<string, number> = {};
+    server?.users.forEach(async user => {
+        const usersSwears = await totalUserSwearCount(guildId, user.id);
+        if (usersSwears > 0) userSwearTotals[user.id] = usersSwears;
+    });
+    return userSwearTotals;
+}
+
+/**
+ * Gets a Record of each user and the total number of times each has used the given curse word
+ * @param guildId Id of the server rankings being retrieved for
+ * @param curse specific curse word being grabbed
+ * @returns record of users who have used the given word and the number of times they have used it
+ */
+export const getServerSpecificSwearRankings = async (guildId: string, curse: string): Promise<Record<string, number>> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    let userSwearTotals: Record<string, number> = {};
+    server?.users.forEach(async user => {
+        const userSwears = await getUserSpecificSwearWordCount(guildId, user.id, curse);
+        if (userSwears > 0) userSwearTotals[user.id] = userSwears;
+    });
+    return userSwearTotals;
 }

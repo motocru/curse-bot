@@ -103,6 +103,20 @@ async function handleCommand(msg: Message) {
             break;
         //Adds a new curse word to the database
         case "ADD":
+            if (args.length <= 1 || Curses.curses === null || Curses.curses === undefined) {
+                msg.channel.send(Curses.SwearWordMissingMessage);
+                return;
+            }
+            args.splice(0, 1);
+            //splice out any references to users
+            args = args.filter(x => !x.match(/<@[0-9]+>/gi));
+            //get all words in between quotes
+            const quoteArgs = args.filter(x => x.match(/"[A-z]+"/gi));
+            console.log(args);
+            if (args.length < 0) {
+                msg.channel.send(Curses.SwearWordMissingMessage);
+            }
+
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
@@ -184,11 +198,12 @@ async function handleCommand(msg: Message) {
             args = args.filter(x => !x.match(/<@[0-9]+>/gi));
             //Rank based on the given words
             if (args.length > 0) {
-                args.forEach(curse => {
-
+                args.forEach(async curse => {
+                    msg.channel.send(await getRankForCurseWord(msg?.guildId!, msg.guild?.name!, curse));
                 });
             } else {
                 //rank based on overall number of curse words
+                msg.channel.send(await getRankForServer(msg?.guildId!, msg.guild?.name!));
             }
             break;
         default:
@@ -224,9 +239,9 @@ async function getWordCountForUser(guildId: string, userId: string, nickname: st
 async function getTotalSwearCountForServer(guildId: string, guildName: string): Promise<string> {
     let responseString = `Swear totals for ${guildName}:\n`;
     const serverSwearTotals: Record<string, number> = await servers.getServerSwearTotal(guildId);
-    const sortedSwearArray: Array<{curse: string, count: number}> = sortSwearRecord(serverSwearTotals);
+    const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(serverSwearTotals);
     sortedSwearArray.forEach(x => {
-        responseString += `${x.curse}: ${x.count}`;
+        responseString += `${x.key}: ${x.count}`;
     });
     return responseString;
 }
@@ -234,22 +249,37 @@ async function getTotalSwearCountForServer(guildId: string, guildName: string): 
 async function getTotalSwearCountForUser(guildId: string, userId: string, nickname: string) {
     let responseString = `Swear totals for ${nickname}:\n`;
     const userSwearTotals: Record<string, number> = await users.getUserSwearRecord(guildId, userId);
-    const sortedSwearArray: Array<{curse: string, count: number}> = sortSwearRecord(userSwearTotals);
+    const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(userSwearTotals);
     sortedSwearArray.forEach(x => {
-        responseString += `${x.curse}: ${x.count}`;
+        responseString += `${x.key}: ${x.count}`;
     });
     return responseString;
 }
 
-async function getRankForCurseWord(guildId: string, curse: string) {
-    let responseString = `Rankings for ${curse}:\n`;
-    
+async function getRankForServer(guildId: string, guildName: string): Promise<string> {
+    let responseString = `Rankings for ${guildName}:\n`;
+    const serverRankings: Record<string, number> = await servers.getServerSwearUseRankings(guildId);
+    const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
+    sortedRankings.forEach(x => {
+        responseString += `<@${x.key}>: ${x.count} swears`;
+    });
+    return responseString;
 }
 
-function sortSwearRecord(swearRecord: Record<string, number>): Array<{curse: string, count: number}> {
-    let sorted: Array<{curse: string, count: number}> = [];
+async function getRankForCurseWord(guildId: string, guildName: string, curse: string): Promise<string> {
+    let responseString = `Rankings for ${curse} on ${guildName}:\n`;
+    const serverRankings: Record<string, number> = await servers.getServerSpecificSwearRankings(guildId, curse);
+    const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
+    sortedRankings.forEach(x => {
+        responseString += `<@${x.key}>: ${x.count} swears`;
+    });
+    return responseString;
+}
+
+function sortRecord(swearRecord: Record<string, number>): Array<{key: string, count: number}> {
+    let sorted: Array<{key: string, count: number}> = [];
     for (var curse in swearRecord) {
-        sorted.push({ curse, count: swearRecord[curse]});
+        sorted.push({ key: curse, count: swearRecord[curse]});
     }
     sorted.sort(function(a, b) {
         return b.count - a.count;
