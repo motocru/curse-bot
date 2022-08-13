@@ -1,7 +1,17 @@
 import { db } from './db';
 import { Server } from './dataTypes';
 import { totalUserSwearCount, getUserSpecificSwearWordCount } from './users';
-import { Guild } from 'discord.js';
+
+export const getOrCreateServer = async (guildId: string): Promise<Server> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    if (server == null) {
+        const newServerData: Server = {_id: guildId, users: [], swears: [], firstCurseUserId: null};
+        await db?.collection<Server>(guildId).insertOne(newServerData)
+        return newServerData;
+    } else {
+        return server;
+    }
+}
 
 /**
  * Gets the total number of times any curse words were used on the server
@@ -9,7 +19,7 @@ import { Guild } from 'discord.js';
  * @returns number of times a curse word was uttered in a server
  */
 export const serverSwearCount = async (guildId: string): Promise<number> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     let swearCount : number = 0;
     server?.users.forEach(x => { 
         for (const swear in x?.swears) {
@@ -26,7 +36,7 @@ export const serverSwearCount = async (guildId: string): Promise<number> => {
  * @returns number of times a specific swear word was used
  */
 export const getServerSepecificSwearCount = async (guildId: string, swearWord: string): Promise<number> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     let swearCount = 0;
     server?.users.forEach(x => {
         swearCount += x?.swears[swearWord] ?? 0;
@@ -40,7 +50,7 @@ export const getServerSepecificSwearCount = async (guildId: string, swearWord: s
  * @returns Record of words used and their total uses
  */
 export const getServerSwearTotal = async (guildId: string): Promise<Record<string, number>> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     let serverRecords: Record<string, number> = {};
     server?.users.forEach(x => {
         for (const swear in x?.swears) {
@@ -56,7 +66,7 @@ export const getServerSwearTotal = async (guildId: string): Promise<Record<strin
  * @returns Id of the user who first swore on a server
  */
 export const getServerSealBreaker = async (guildId: string): Promise<string | null> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     return server?.firstCurseUserId ?? null;
 }
 
@@ -66,7 +76,7 @@ export const getServerSealBreaker = async (guildId: string): Promise<string | nu
  * @returns String list of custom swears added to a server
  */
 export const getServerCustomSwearList = async (guildId: string): Promise<string[]> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     return server?.swears ?? [];
 }
 
@@ -77,8 +87,8 @@ export const getServerCustomSwearList = async (guildId: string): Promise<string[
  * @returns fully updated list of custom swears on a server
  */
 export const addToServerCustomSwearList = async (guildId: string, swears: string[]): Promise<string[]> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
-    const updatedSwears = server?.swears.concat(swears);
+    const server = await getOrCreateServer(guildId);
+    const updatedSwears = [...server?.swears ?? [], ...swears];
     await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {swears: updatedSwears}});
     return updatedSwears ?? [];
 }
@@ -89,7 +99,7 @@ export const addToServerCustomSwearList = async (guildId: string, swears: string
  * @returns Record of each user and the total amount of times a user swore
  */
 export const getServerSwearUseRankings = async (guildId: string): Promise<Record<string, number>> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     let userSwearTotals: Record<string, number> = {};
     server?.users.forEach(async user => {
         const usersSwears = await totalUserSwearCount(guildId, user.id);
@@ -105,7 +115,7 @@ export const getServerSwearUseRankings = async (guildId: string): Promise<Record
  * @returns record of users who have used the given word and the number of times they have used it
  */
 export const getServerSpecificSwearRankings = async (guildId: string, curse: string): Promise<Record<string, number>> => {
-    const server = await db?.collection<Server>(guildId)?.findOne({_id: guildId});
+    const server = await getOrCreateServer(guildId);
     let userSwearTotals: Record<string, number> = {};
     server?.users.forEach(async user => {
         const userSwears = await getUserSpecificSwearWordCount(guildId, user.id, curse);

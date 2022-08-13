@@ -1,4 +1,4 @@
-import { Client, Intents, Message, Permissions } from "discord.js";
+import { Client, Intents, Message, MessageActionRow, Permissions } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -73,7 +73,9 @@ async function handleMessage(msg: Message) {
     if (/^\?\w+/.test(msg.content)) {
         handleCommand(msg);
     } else {
-        //eveyrthing in here will be checked for containing curse words
+        //eveyrthing in here will be checked for containing curse words and messages to the bot
+        if (msg.mentions.has(client.user!.id)) handleBotPing(msg);
+
     }
     
 }
@@ -108,15 +110,23 @@ async function handleCommand(msg: Message) {
                 return;
             }
             args.splice(0, 1);
-            //splice out any references to users
-            args = args.filter(x => !x.match(/<@[0-9]+>/gi));
-            //get all words in between quotes
-            const quoteArgs = args.filter(x => x.match(/"[A-z]+"/gi));
-            console.log(args);
+            //check there's arguments and return message if not
             if (args.length < 0) {
                 msg.channel.send(Curses.SwearWordMissingMessage);
             }
+            //get all words in between quotes
+            args = args.filter(x => !x.match(/<@[0-9]+>/gi));
+            args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g,' '));
+            let quoteArgs = args.join(" ").match(/"([A-z]+|\s+)*[A-z]([A-z]+|\s+)*"/gi);
 
+            if (quoteArgs == null || quoteArgs?.length < 1) {
+                msg.channel.send('To add swear words to your server you must wrap the word or phrase you want to be added in quotation marks (")\n Ex. "shartballz" '); //TODO: add this message to the curses file
+            }
+            const words = quoteArgs?.map(x => x.substring(1, x.length-1).trim()); //removing the quotes and unneeded whitespace
+            //remove any words that already exist in the server
+            const finalwords = filterNewCursesToAdd(words ?? [], msg.guildId!);
+            await servers.addToServerCustomSwearList(msg.guildId!, finalwords);
+            msg.channel.send(`${finalwords?.length} new curse words added to ${msg.guild?.name}`);
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
@@ -212,6 +222,20 @@ async function handleCommand(msg: Message) {
     }
 }
 
+function handleBotPing(msg: Message) {
+    msg.channel.send(Curses.botResponses[Math.floor(Math.random() * Math.floor(Curses.botResponses.length))]);
+}
+
+async function parseMessage(msg: Message) {
+    let message = msg.content.toLocaleUpperCase();
+    message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
+    message = message.replace(/<@[0-9]+>/gi, '');
+    const words = message.match(new RegExp(`\\b(${Curses.curses.join("|")})\\b`, "gi"));
+    if (words !== null) {
+        
+    }
+}
+
 async function getCurseCountForServer(guildId: string | null, guildName: string | undefined) {
     let responseString = `Total number of times ${guildName} has swore\n`;
     const swearCount: number = await servers.serverSwearCount(guildId!);
@@ -285,4 +309,15 @@ function sortRecord(swearRecord: Record<string, number>): Array<{key: string, co
         return b.count - a.count;
     });
     return sorted;
+}
+
+function filterNewCursesToAdd(newCurses: string[], guildId: string): string[] {
+    const filteredCurses = [];
+    for (let i = 0; i < newCurses.length; i++) {
+        if (!baseCurseRecord[newCurses[i]] && !serverRecords[guildId][newCurses[i]]) {
+            serverRecords[guildId][newCurses[i]] = true;
+            filteredCurses.push(newCurses[i]);
+        }
+    }
+    return filteredCurses;
 }

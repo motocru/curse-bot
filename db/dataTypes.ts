@@ -2,7 +2,7 @@ export interface Server {
     _id: string;
     users: User[];
     swears: string[];
-    firstCurseUserId: string;
+    firstCurseUserId: string | null;
 }
 
 export interface User {
