@@ -1,5 +1,4 @@
-import { kMaxLength } from "buffer";
-import { Client, Intents, Message, Permissions } from "discord.js";
+import { Client, Intents, Message } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -37,7 +36,6 @@ const USERMILESTONES: Record<number, string> = {
     2500: Curses.serverMessages.message14
   }
 
-const permissions = new Permissions(['MANAGE_CHANNELS', 'EMBED_LINKS', 'READ_MESSAGE_HISTORY', 'SEND_MESSAGES']);
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]});
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
