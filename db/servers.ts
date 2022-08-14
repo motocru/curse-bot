@@ -54,7 +54,11 @@ export const getServerSwearTotal = async (guildId: string): Promise<Record<strin
     let serverRecords: Record<string, number> = {};
     server?.users.forEach(x => {
         for (const swear in x?.swears) {
-            serverRecords[swear] += x?.swears[swear] ?? 0;
+            if (serverRecords[swear] >= 1) {
+                serverRecords[swear] += x?.swears[swear] ?? 0;
+            } else {
+                serverRecords[swear] = x?.swears[swear]
+            }
         }
     });
     return serverRecords;
@@ -68,6 +72,12 @@ export const getServerSwearTotal = async (guildId: string): Promise<Record<strin
 export const getServerSealBreaker = async (guildId: string): Promise<string | null> => {
     const server = await getOrCreateServer(guildId);
     return server?.firstCurseUserId ?? null;
+}
+
+export const setServerSealBreaker = async (guildId: string, userId: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    server.firstCurseUserId = userId;
+    await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {firstCurseUserId: userId}});
 }
 
 /**
@@ -101,10 +111,10 @@ export const addToServerCustomSwearList = async (guildId: string, swears: string
 export const getServerSwearUseRankings = async (guildId: string): Promise<Record<string, number>> => {
     const server = await getOrCreateServer(guildId);
     let userSwearTotals: Record<string, number> = {};
-    server?.users.forEach(async user => {
-        const usersSwears = await totalUserSwearCount(guildId, user.id);
-        if (usersSwears > 0) userSwearTotals[user.id] = usersSwears;
-    });
+    for (let i = 0; i < server?.users.length; i++) {
+        const usersSwears = await totalUserSwearCount(guildId, server?.users[i].id);
+        if (usersSwears > 0) userSwearTotals[server?.users[i].id] = usersSwears;
+    }
     return userSwearTotals;
 }
 
@@ -117,9 +127,9 @@ export const getServerSwearUseRankings = async (guildId: string): Promise<Record
 export const getServerSpecificSwearRankings = async (guildId: string, curse: string): Promise<Record<string, number>> => {
     const server = await getOrCreateServer(guildId);
     let userSwearTotals: Record<string, number> = {};
-    server?.users.forEach(async user => {
-        const userSwears = await getUserSpecificSwearWordCount(guildId, user.id, curse);
-        if (userSwears > 0) userSwearTotals[user.id] = userSwears;
-    });
+    for (let i = 0; i < server?.users.length; i++) {
+        const usersSwears = await getUserSpecificSwearWordCount(guildId, server?.users[i].id, curse);
+        if (usersSwears > 0) userSwearTotals[server?.users[i].id] = usersSwears;
+    }
     return userSwearTotals;
 }

@@ -7,11 +7,8 @@ export let db: Db | undefined;
     } else {
         console.log('database connection made');
         db = database?.db('servers');
-        /*below is a code to delete the users table so i can just un-comment this
+        /*below is a code to delete the tables so i can just un-comment this
         rather than type it out everytime*/
-        //db.collection('servers').drop(function(err, delOk) {
-        //     if (err) throw err;
-        //     if (delOk) console.log('users database dropped');
-        //});
+        //db?.dropDatabase();
     }
 });

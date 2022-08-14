@@ -1,39 +1,40 @@
-import { Client, Intents, Message, MessageActionRow, Permissions } from "discord.js";
+import { kMaxLength } from "buffer";
+import { Client, Intents, Message, Permissions } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
 import * as users from './db/users';
 
 /**adding the  message constants below */
-const USERMILESTONES = {
-    10: Curses['userMessages'].message2,
-    25: Curses['userMessages'].message3,
-    50: Curses['userMessages'].message4,
-    75: Curses['userMessages'].message5,
-    100: Curses['userMessages'].message6,
-    150: Curses['userMessages'].message7,
-    200: Curses['userMessages'].message8,
-    300: Curses['userMessages'].message9,
-    400: Curses['userMessages'].message10,
-    450: Curses['userMessages'].message11,
-    500: Curses['userMessages'].message12
+const USERMILESTONES: Record<number, string> = {
+    10: Curses.userMessages.message2,
+    25: Curses.userMessages.message3,
+    50: Curses.userMessages.message4,
+    75: Curses.userMessages.message5,
+    100: Curses.userMessages.message6,
+    150: Curses.userMessages.message7,
+    200: Curses.userMessages.message8,
+    300: Curses.userMessages.message9,
+    400: Curses.userMessages.message10,
+    450: Curses.userMessages.message11,
+    500: Curses.userMessages.message12
   }
   
-  const SERVERMILESTONES = {
-    1: Curses['serverMessages'].message1,
-    10: Curses['serverMessages'].message2,
-    100: Curses['serverMessages'].message3,
-    250: Curses['serverMessages'].message4,
-    500: Curses['serverMessages'].message5,
-    750: Curses['serverMessages'].message6,
-    1000: Curses['serverMessages'].message7,
-    1250: Curses['serverMessages'].message8,
-    1500: Curses['serverMessages'].message9,
-    1750: Curses['serverMessages'].message10,
-    2000: Curses['serverMessages'].message11,
-    2250: Curses['serverMessages'].message12,
-    2350: Curses['serverMessages'].message13,
-    2500: Curses['serverMessages'].message14
+  const SERVERMILESTONES: Record<number, string> = {
+    1: Curses.serverMessages.message1,
+    10: Curses.serverMessages.message2,
+    100: Curses.serverMessages.message3,
+    250: Curses.serverMessages.message4,
+    500: Curses.serverMessages.message5,
+    750: Curses.serverMessages.message6,
+    1000: Curses.serverMessages.message7,
+    1250: Curses.serverMessages.message8,
+    1500: Curses.serverMessages.message9,
+    1750: Curses.serverMessages.message10,
+    2000: Curses.serverMessages.message11,
+    2250: Curses.serverMessages.message12,
+    2350: Curses.serverMessages.message13,
+    2500: Curses.serverMessages.message14
   }
 
 const permissions = new Permissions(['MANAGE_CHANNELS', 'EMBED_LINKS', 'READ_MESSAGE_HISTORY', 'SEND_MESSAGES']);
@@ -75,7 +76,7 @@ async function handleMessage(msg: Message) {
     } else {
         //eveyrthing in here will be checked for containing curse words and messages to the bot
         if (msg.mentions.has(client.user!.id)) handleBotPing(msg);
-
+        await parseMessage(msg);
     }
     
 }
@@ -95,8 +96,7 @@ async function handleCommand(msg: Message) {
             if (msg.mentions.users.size > 0) {  
                 msg.mentions.users.forEach(async user => {
                     const guildUser = msg.guild?.members.resolve(user.id);
-                    //TODO: this may need to be tested for potential of crashing (displayName)
-                    msg.channel.send(await getCurseCountForUser(msg.guildId, msg.author.id, guildUser!.displayName))
+                    msg.channel.send(await getCurseCountForUser(msg.guildId, user.id, guildUser!.displayName))
                 });
             } else {
                 //no users were mentioned so we get the count for the entire server
@@ -148,7 +148,7 @@ async function handleCommand(msg: Message) {
                     if (CheckIfCurseWordValid(curse, msg?.guildId!)) {
                         msg.mentions.users.forEach(async user => {
                             const guildUser = msg.guild?.members.resolve(user.id);
-                            msg.channel.send(await getWordCountForUser(msg?.guildId!, msg.author.id, guildUser!.displayName, curse));
+                            msg.channel.send(await getWordCountForUser(msg?.guildId!, user.id, guildUser!.displayName, curse));
                         });
                     }
                 });
@@ -182,7 +182,7 @@ async function handleCommand(msg: Message) {
                 //Total swear count for the users mentioned
                 msg.mentions.users.forEach(async user => {
                     const guildUser = msg.guild?.members.resolve(user.id);
-                    msg.channel.send(await getTotalSwearCountForUser(msg?.guildId!, msg.author.id, guildUser!.displayName));
+                    msg.channel.send(await getTotalSwearCountForUser(msg?.guildId!, user.id, guildUser!.displayName));
                 });
             } else {
                 //Total swear count for the entire server
@@ -198,7 +198,7 @@ async function handleCommand(msg: Message) {
             }
             break;
         case "RANK":
-            if (args.length <= 1 || Curses.curses === null || Curses.curses === undefined) {
+            if (args.length < 1 || Curses.curses === null || Curses.curses === undefined) {
                 msg.channel.send(Curses.SwearWordMissingMessage);
                 return;
             }
@@ -228,36 +228,106 @@ function handleBotPing(msg: Message) {
 
 async function parseMessage(msg: Message) {
     let message = msg.content.toLocaleUpperCase();
+    let parsedCurses: string[] = [];
     message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
     message = message.replace(/<@[0-9]+>/gi, '');
-    const words = message.match(new RegExp(`\\b(${Curses.curses.join("|")})\\b`, "gi"));
-    if (words !== null) {
-        
+    const baseWords = message.match(new RegExp(`\\b(${Curses.curses.join("|")})\\b`, "gi"));
+    const serverCurseList = await servers.getServerCustomSwearList(msg.guildId!);
+    const serverWords = message.match(new RegExp(`\\b(${serverCurseList.join("|")})\\b`, "gi"));
+    //TODO: is there a better way to combine these so we don't create empty strings in this list?
+    if (baseWords !== null) {
+        parsedCurses = [...parsedCurses, ...baseWords];
     }
+    if (serverWords !== null) {
+        parsedCurses = [...parsedCurses, ...serverWords];
+    }
+    parsedCurses = parsedCurses.filter(x => x !== '');
+    if (parsedCurses.length > 0) await incrementSwearsAndSendMessage(parsedCurses, msg);
+}
+
+async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
+    const priorUserSwearRecord = await users.getUserSwearRecord(msg.guildId!, msg.author.id);
+    const priorServerSwearRecord = await servers.getServerSwearTotal(msg.guildId!);
+    if (Object.keys(priorServerSwearRecord).length === 0) {
+        //save the user as the first person to swear on the server
+        await servers.setServerSealBreaker(msg.guildId!, msg.author.id);
+    }
+    if (Object.keys(priorUserSwearRecord).length === 0) {
+        //send a message for a user cursing for the first time
+        msg.channel.send(`<@${msg.author.id}> ${Curses.userMessages.message1}`);
+    }
+    const newUserSwearRecord = await users.addUserSwear(msg.guildId!, msg.author.id, curses);
+    const newServerSwearRecord = await servers.getServerSwearTotal(msg.guildId!);
+    curses = curses.filter(function(elem, index, self) {
+        return index === self.indexOf(elem);
+    });
+    const userMessage = await userMessageEvaluator(curses, msg.author.id, priorUserSwearRecord, newUserSwearRecord);
+    const serverMessage = await serverMessageEvaluator(curses, msg.guild?.name!, priorServerSwearRecord, newServerSwearRecord);
+    if ((userMessage+serverMessage).length > 0) {
+        msg.channel.send(userMessage+serverMessage);
+    }
+}
+
+async function userMessageEvaluator(curses: string[], userId: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
+    let responseString = ``;
+    const addressorText = `<@${userId}>`;
+    for (let i = 0; i < curses.length; i++) {
+        const priorCount = priorRecord[curses[i]] ?? 0;
+        const currentCount = currentRecord[curses[i]];
+        for (const k in USERMILESTONES) {
+            const mile = +k;
+            if (priorCount < mile && currentCount >= mile) {
+                responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${USERMILESTONES[k]}\n`;
+            }
+        }
+    }
+    return responseString;
+}
+
+async function serverMessageEvaluator(curses: string[], serverName: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
+    let responseString = ``;
+    const addressorText = `${serverName}`;
+    for (let i = 0; i < curses.length; i++) {
+        const priorCount = priorRecord[curses[i]] ?? 0;
+        const currentCount = currentRecord[curses[i]];
+        for (const k in SERVERMILESTONES) {
+            const mile = +k;
+            if (priorCount < mile && currentCount >= mile) {
+                if (mile === 1) {
+                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} for the first time, ${SERVERMILESTONES[k]}\n`;
+                } else {
+                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${SERVERMILESTONES[k]}\n`;
+                }
+                
+            }
+        }
+    }
+    return responseString;
 }
 
 async function getCurseCountForServer(guildId: string | null, guildName: string | undefined) {
     let responseString = `Total number of times ${guildName} has swore\n`;
     const swearCount: number = await servers.serverSwearCount(guildId!);
-    return responseString += swearCount > 0 ? `${guildName} is pure and has not cursed` : swearCount;
+    return responseString += swearCount > 0 ? swearCount : `${guildName} is pure and has not cursed`;
 }
 
 async function getCurseCountForUser(guildId: string | null, userId: string, nickname: string) {
+    //console.log(userId);
     let responseString = `Total number of times ${nickname} has swore:\n`;
     const swearCount: number = await users.totalUserSwearCount(guildId!, userId);
-    return responseString += swearCount > 0 ? `${nickname} is pure and has not cursed yet` : swearCount;
+    return responseString += swearCount > 0 ?  swearCount : `${nickname} is pure and has not cursed yet`;
 }
 
 async function getWordCountForServer(guildId: string, guildName: string, curseWord: string) {
     let responseString = `Swear word counts for ${guildName}:\n`;
     const swearCount: number = await servers.getServerSepecificSwearCount(guildId!, curseWord);
-    return responseString += swearCount > 0 ? `${guildName} has not yet uttered '${curseWord}'` : swearCount;
+    return responseString += swearCount > 0 ?  swearCount : `${guildName} has not yet uttered '${curseWord}'`;
 }
 
 async function getWordCountForUser(guildId: string, userId: string, nickname: string, curseWord: string) {
-    let responseString = `Swear word counts for ${nickname}:\n`;
+    let responseString = `number of times ${curseWord} used by ${nickname}:\n`;
     const swearCount: number = await users.getUserSpecificSwearWordCount(guildId!, userId, curseWord);
-    return responseString += swearCount > 0 ? `${nickname} has not yet uttered '${curseWord}'` : swearCount;
+    return responseString += swearCount > 0 ?  swearCount : `${nickname} has not yet uttered '${curseWord}'`;
 }
 
 async function getTotalSwearCountForServer(guildId: string, guildName: string): Promise<string> {
@@ -265,7 +335,7 @@ async function getTotalSwearCountForServer(guildId: string, guildName: string): 
     const serverSwearTotals: Record<string, number> = await servers.getServerSwearTotal(guildId);
     const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(serverSwearTotals);
     sortedSwearArray.forEach(x => {
-        responseString += `${x.key}: ${x.count}`;
+        responseString += `${x.key}: ${x.count}\n`;
     });
     return responseString;
 }
@@ -275,7 +345,7 @@ async function getTotalSwearCountForUser(guildId: string, userId: string, nickna
     const userSwearTotals: Record<string, number> = await users.getUserSwearRecord(guildId, userId);
     const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(userSwearTotals);
     sortedSwearArray.forEach(x => {
-        responseString += `${x.key}: ${x.count}`;
+        responseString += `${x.key}: ${x.count}\n`;
     });
     return responseString;
 }
@@ -284,9 +354,13 @@ async function getRankForServer(guildId: string, guildName: string): Promise<str
     let responseString = `Rankings for ${guildName}:\n`;
     const serverRankings: Record<string, number> = await servers.getServerSwearUseRankings(guildId);
     const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
-    sortedRankings.forEach(x => {
-        responseString += `<@${x.key}>: ${x.count} swears`;
-    });
+    if (sortedRankings.length > 0) {
+        sortedRankings.forEach(x => {
+            responseString += `<@${x.key}>: ${x.count} swears\n`;
+        });
+    } else {
+        responseString += `No one in ${guildName} has cursed yet`;
+    }
     return responseString;
 }
 
@@ -294,9 +368,13 @@ async function getRankForCurseWord(guildId: string, guildName: string, curse: st
     let responseString = `Rankings for ${curse} on ${guildName}:\n`;
     const serverRankings: Record<string, number> = await servers.getServerSpecificSwearRankings(guildId, curse);
     const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
-    sortedRankings.forEach(x => {
-        responseString += `<@${x.key}>: ${x.count} swears`;
-    });
+    if (sortedRankings.length > 0) {
+        sortedRankings.forEach(x => {
+            responseString += `<@${x.key}>: ${x.count} swears\n`;
+        });
+    } else {
+        responseString += `No one in ${guildName} has used ${curse} yet`;
+    }
     return responseString;
 }
 
