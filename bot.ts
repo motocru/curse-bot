@@ -312,7 +312,6 @@ async function getCurseCountForServer(guildId: string | null, guildName: string 
 }
 
 async function getCurseCountForUser(guildId: string | null, userId: string, nickname: string) {
-    //console.log(userId);
     let responseString = `Total number of times ${nickname} has swore:\n`;
     const swearCount: number = await users.totalUserSwearCount(guildId!, userId);
     return responseString += swearCount > 0 ?  swearCount : `${nickname} is pure and has not cursed yet`;
