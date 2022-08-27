@@ -115,16 +115,16 @@ async function handleCommand(msg: Message) {
             //get all words in between quotes
             args = args.filter(x => !x.match(/<@[0-9]+>/gi));
             args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g,' '));
-            let quoteArgs = args.join(" ").match(/"([A-z]+|\s+)*[A-z]([A-z]+|\s+)*"/gi);
+            let quoteArgs = args.join(" ").match(/("|“)([A-z]+|\s+)*[A-z]([A-z]+|\s+)*("|”)/gi);
 
             if (quoteArgs == null || quoteArgs?.length < 1) {
                 msg.channel.send('To add swear words to your server you must wrap the word or phrase you want to be added in quotation marks (")\n Ex. "shartballz" '); //TODO: add this message to the curses file
             }
             const words = quoteArgs?.map(x => x.substring(1, x.length-1).trim()); //removing the quotes and unneeded whitespace
             //remove any words that already exist in the server
-            const finalwords = filterNewCursesToAdd(words ?? [], msg.guildId!);
-            await servers.addToServerCustomSwearList(msg.guildId!, finalwords);
-            msg.channel.send(`${finalwords?.length} new curse words added to ${msg.guild?.name}`);
+            const finalWords = filterNewCursesToAdd(words ?? [], msg.guildId!);
+            await servers.addToServerCustomSwearList(msg.guildId!, finalWords);
+            msg.channel.send(`${finalWords?.length} new curse words added to ${msg.guild?.name}`);
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
