@@ -317,7 +317,7 @@ async function getCurseCountForUser(guildId: string | null, userId: string, nick
 
 async function getWordCountForServer(guildId: string, guildName: string, curseWord: string) {
     let responseString = `Swear word counts for ${guildName}:\n`;
-    const swearCount: number = await servers.getServerSepecificSwearCount(guildId!, curseWord);
+    const swearCount: number = await servers.getServerSpecificSwearCount(guildId!, curseWord);
     return responseString += swearCount > 0 ?  swearCount : `${guildName} has not yet uttered '${curseWord}'`;
 }
 

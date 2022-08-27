@@ -35,7 +35,7 @@ export const serverSwearCount = async (guildId: string): Promise<number> => {
  * @param swearWord swear word being chekced
  * @returns number of times a specific swear word was used
  */
-export const getServerSepecificSwearCount = async (guildId: string, swearWord: string): Promise<number> => {
+export const getServerSpecificSwearCount = async (guildId: string, swearWord: string): Promise<number> => {
     const server = await getOrCreateServer(guildId);
     let swearCount = 0;
     server?.users.forEach(x => {
@@ -101,6 +101,19 @@ export const addToServerCustomSwearList = async (guildId: string, swears: string
     const updatedSwears = [...server?.swears ?? [], ...swears];
     await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {swears: updatedSwears}});
     return updatedSwears ?? [];
+}
+
+/**
+ * Removes given curse words from the custom swear list returning the remaining curse words
+ * @param guildId Id of the server having words removed from
+ * @param swears string array of swears to be removed from the server
+ * @returns remaining custom swear list after removal
+ */
+export const removeFromServerCustomSwearList = async (guildId: string, swears: string[]): Promise<string[]> => {
+    const server = await getOrCreateServer(guildId);
+    const updatedSwears = server.swears.filter(word => !swears.includes(word));
+    await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {swears: updatedSwears}});
+    return updatedSwears;
 }
 
 /**
