@@ -108,7 +108,7 @@ async function handleCommand(msg: Message) {
         //Adds a new curse word to the database
         case "ADD":
             if (await canUserEditSwearLists(msg) == false) {
-                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`); //TODO: place in curses.json file
+                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`);
                 break;
             }
             const addWords = getQuoteArguments(msg, args); //removing the quotes and unneeded whitespace
@@ -116,18 +116,18 @@ async function handleCommand(msg: Message) {
             //remove any words that already exist in the server
             const finalWords = filterNewCursesToAdd(addWords ?? [], msg.guildId!);
             await servers.addToServerCustomSwearList(msg.guildId!, finalWords);
-            msg.channel.send(`${finalWords?.length} new curse words added to ${msg.guild?.name}`);
+            msg.channel.send(`The curse word(s) ${finalWords.join(', ')} were added to ${msg.guild?.name}`);
             break;
         case 'REMOVE':
             if (await canUserEditSwearLists(msg) == false) {
-                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`); //TODO: place in curses.json file
+                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`);
                 break;
             }
             const removeWords = getQuoteArguments(msg, args); //removing the quotes and unneeded whitespace
             if (removeWords.length == 0) break;
             const removableCurses = filterCursesToRemove(removeWords, msg, msg.guildId!);
             await servers.removeFromServerCustomSwearList(msg.guildId!, removableCurses);
-            msg.channel.send(`The curse word(s) ${removableCurses.join(', ')} were removed from ${msg.guild?.name}`); //TODO: place this in curses.json file
+            msg.channel.send(`The curse word(s) ${removableCurses.join(', ')} were removed from ${msg.guild?.name}`);
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
@@ -406,7 +406,7 @@ function getQuoteArguments(msg: Message, args: string[]): string[] {
     let quoteArgs = args.join(" ").match(/("|“)([A-z]+|\s+)*[A-z]([A-z]+|\s+)*("|”)/gi);
 
     if (quoteArgs == null || quoteArgs?.length < 1) {
-        msg.channel.send('To add/remove swear words to your server you must wrap the word or phrase you want to be added in quotation marks (")\n Ex. "shartballz" '); //TODO: add this message to the curses file
+        msg.channel.send(Curses.wrapInQuotesMessage);
         return [];
     }
     return quoteArgs?.map(x => x.substring(1, x.length-1).trim()) ?? []; //removing the quotes and unneeded whitespace
