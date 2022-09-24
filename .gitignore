@@ -8,3 +8,4 @@ curses.json
 #there's no need to bring in the note.txt or test.js file either
 note.txt
 test.js
+bin/
