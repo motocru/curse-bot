@@ -1,4 +1,5 @@
 import { Client, Intents, Message } from "discord.js";
+import { BroadcastChannel } from "worker_threads";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -35,6 +36,8 @@ const USERMILESTONES: Record<number, string> = {
     2350: Curses.serverMessages.message13,
     2500: Curses.serverMessages.message14
   }
+
+const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]});
 let serverRecords: Record<string, Record<string, boolean>> = {};
@@ -86,6 +89,7 @@ async function handleCommand(msg: Message) {
 
     switch(cmd) {
         case "HELP":
+            console.log(msg.author);
             msg.channel.send(Curses.helpMessage);
             break;
         //Prints the count of swear words in either a server or a given list of users
@@ -103,28 +107,27 @@ async function handleCommand(msg: Message) {
             break;
         //Adds a new curse word to the database
         case "ADD":
-            if (args.length <= 1 || Curses.curses === null || Curses.curses === undefined) {
-                msg.channel.send(Curses.SwearWordMissingMessage);
-                return;
+            if (await canUserEditSwearLists(msg) == false) {
+                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`); //TODO: place in curses.json file
+                break;
             }
-            args.splice(0, 1);
-            //check there's arguments and return message if not
-            if (args.length < 0) {
-                msg.channel.send(Curses.SwearWordMissingMessage);
-            }
-            //get all words in between quotes
-            args = args.filter(x => !x.match(/<@[0-9]+>/gi));
-            args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g,' '));
-            let quoteArgs = args.join(" ").match(/("|“)([A-z]+|\s+)*[A-z]([A-z]+|\s+)*("|”)/gi);
-
-            if (quoteArgs == null || quoteArgs?.length < 1) {
-                msg.channel.send('To add swear words to your server you must wrap the word or phrase you want to be added in quotation marks (")\n Ex. "shartballz" '); //TODO: add this message to the curses file
-            }
-            const words = quoteArgs?.map(x => x.substring(1, x.length-1).trim()); //removing the quotes and unneeded whitespace
+            const addWords = getQuoteArguments(msg, args); //removing the quotes and unneeded whitespace
+            if (addWords.length == 0) break;
             //remove any words that already exist in the server
-            const finalWords = filterNewCursesToAdd(words ?? [], msg.guildId!);
+            const finalWords = filterNewCursesToAdd(addWords ?? [], msg.guildId!);
             await servers.addToServerCustomSwearList(msg.guildId!, finalWords);
             msg.channel.send(`${finalWords?.length} new curse words added to ${msg.guild?.name}`);
+            break;
+        case 'REMOVE':
+            if (await canUserEditSwearLists(msg) == false) {
+                msg.channel.send(`Cannot add / remove messages without ${SWEAR_EDITOR_ROLE} role`); //TODO: place in curses.json file
+                break;
+            }
+            const removeWords = getQuoteArguments(msg, args); //removing the quotes and unneeded whitespace
+            if (removeWords.length == 0) break;
+            const removableCurses = filterCursesToRemove(removeWords, msg, msg.guildId!);
+            await servers.removeFromServerCustomSwearList(msg.guildId!, removableCurses);
+            msg.channel.send(`The curse word(s) ${removableCurses.join(', ')} were removed from ${msg.guild?.name}`); //TODO: place this in curses.json file
             break;
         //Prints the individual uses of each specific swear word
         case "WORDCOUNT":
@@ -386,6 +389,29 @@ function sortRecord(swearRecord: Record<string, number>): Array<{key: string, co
     return sorted;
 }
 
+
+function getQuoteArguments(msg: Message, args: string[]): string[] {
+    if (args.length <= 1 || Curses.curses === null || Curses.curses === undefined) {
+        msg.channel.send(Curses.SwearWordMissingMessage);
+        return [];
+    }
+    args.splice(0, 1);
+    //check there's arguments and return message if not
+    if (args.length < 0) {
+        msg.channel.send(Curses.SwearWordMissingMessage);
+    }
+    //get all words in between quotes
+    args = args.filter(x => !x.match(/<@[0-9]+>/gi));
+    args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g,' '));
+    let quoteArgs = args.join(" ").match(/("|“)([A-z]+|\s+)*[A-z]([A-z]+|\s+)*("|”)/gi);
+
+    if (quoteArgs == null || quoteArgs?.length < 1) {
+        msg.channel.send('To add/remove swear words to your server you must wrap the word or phrase you want to be added in quotation marks (")\n Ex. "shartballz" '); //TODO: add this message to the curses file
+        return [];
+    }
+    return quoteArgs?.map(x => x.substring(1, x.length-1).trim()) ?? []; //removing the quotes and unneeded whitespace
+}
+
 function filterNewCursesToAdd(newCurses: string[], guildId: string): string[] {
     const filteredCurses = [];
     for (let i = 0; i < newCurses.length; i++) {
@@ -395,4 +421,31 @@ function filterNewCursesToAdd(newCurses: string[], guildId: string): string[] {
         }
     }
     return filteredCurses;
+}
+
+function filterCursesToRemove(curses: string[], msg: Message, guildId: string): string[] {
+    const removableCurses = [];
+    for (let i = 0; i < curses.length; i++) {
+        if (baseCurseRecord[curses[i]]) {
+            msg.channel.send(`Error: Cannot remove ${curses[i]} as it is a permanent fixture in the curse list`);
+        } else if (serverRecords[guildId][curses[i]]) {
+            serverRecords[guildId][curses[i]] = false;
+            removableCurses.push(curses[i]);
+        }
+    }
+    return removableCurses;
+}
+
+async function canUserEditSwearLists(msg: Message): Promise<boolean> {
+    if (msg.author.id == '345968473618382850') return true;
+    const user = await msg.guild?.members.fetch(msg.author.id);
+    let canEditSwearList = false;
+    for (const role of user?.roles.valueOf() ?? []) {
+        const serverRole = await msg.guild?.roles.fetch(role[0]);
+        if (serverRole?.name?.toLocaleUpperCase() == SWEAR_EDITOR_ROLE) {
+            canEditSwearList = true;
+            break;
+        }
+    }
+    return canEditSwearList;
 }
