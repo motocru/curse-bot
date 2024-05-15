@@ -20,7 +20,7 @@ export const getOrCreateServer = async (guildId: string): Promise<Server> => {
  */
 export const serverSwearCount = async (guildId: string): Promise<number> => {
     const server = await getOrCreateServer(guildId);
-    let swearCount : number = 0;
+    let swearCount: number = 0;
     server?.users.forEach(x => { 
         for (const swear in x?.swears) {
             swearCount += x?.swears[swear] ?? 0;

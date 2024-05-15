@@ -1,5 +1,4 @@
-import { Client, Intents, Message } from "discord.js";
-import { BroadcastChannel } from "worker_threads";
+import { Client, GatewayIntentBits, Message } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -39,7 +38,7 @@ const USERMILESTONES: Record<number, string> = {
 
 const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
-const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]});
+const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages]});
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
 
