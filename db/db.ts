@@ -9,8 +9,10 @@ const client = new MongoClient('mongodb://localhost:27017', {
     }
 });
 
+
 async function run() {
     try {
+        console.log('connecting to server');
         await client.connect();
 
         db = client.db('servers');
@@ -18,7 +20,7 @@ async function run() {
         console.log('ping successful');
     } finally {
         //ensure our closure of the client connection
-        client.close();
+        //client.close();
     }
 }
 run().catch(console.dir);

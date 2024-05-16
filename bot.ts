@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Message } from "discord.js";
+import { Client, GatewayIntentBits, Message, Events, Collection } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -39,28 +39,33 @@ const USERMILESTONES: Record<number, string> = {
 const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
 const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages]});
+
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
 
-client.once('ready', () => {
-    console.log('Bot is ready');
-    Curses.curses.forEach(curse => {
-        baseCurseRecord[curse] = true;
-    });
-    client.guilds.fetch().then(guilds => {
-        guilds.forEach(async guild => {
-            //collect each custom swear list for the server and build the overall records
-            let serverSwears = await servers.getServerCustomSwearList(guild.id);
-            let serverRecord: Record<string, boolean> = {};
-            serverSwears.forEach(swear => {
-                serverRecord[swear] = true;
-            });
-            serverRecords[guild.id] = serverRecord;
+client.once(Events.ClientReady, readyClient => {
+    if (readyClient) {
+        console.log('ready client via boolean value');
+        Curses.curses.forEach(curse => {
+            baseCurseRecord[curse] = true;
         });
-    })
+        client.guilds.fetch().then(guilds => {
+            guilds.forEach(async guild => {
+                //collect each custom swear list for the server and build the overall records
+                let serverSwears = await servers.getServerCustomSwearList(guild.id);
+                let serverRecord: Record<string, boolean> = {};
+                serverSwears.forEach(swear => {
+                    serverRecord[swear] = true;
+                });
+                serverRecords[guild.id] = serverRecord;
+            });
+        })
+    } else {
+        console.error('unable to connect to discord client');
+    }
 });
 
-client.on('messageCreate', handleMessage);
+client.on(Events.MessageCreate, handleMessage);
 
 // Login to Discord with your client's token
 client.login(token);
