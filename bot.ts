@@ -1,11 +1,12 @@
-import { Client, GatewayIntentBits, Message, Events } from "discord.js";
+import { Client, GatewayIntentBits, Message, Events, REST, Routes, Interaction, TextChannel, CommandInteraction,  } from "discord.js";
+import Slash from './commands/utility/ping';
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
 import * as users from './db/users';
 
 /**adding the  message constants below */
-const USERMILESTONES: Record<number, string> = {
+const USER_MILESTONES: Record<number, string> = {
     10: Curses.userMessages.message2,
     25: Curses.userMessages.message3,
     50: Curses.userMessages.message4,
@@ -19,7 +20,7 @@ const USERMILESTONES: Record<number, string> = {
     500: Curses.userMessages.message12
   }
   
-  const SERVERMILESTONES: Record<number, string> = {
+  const SERVER_MILESTONES: Record<number, string> = {
     1: Curses.serverMessages.message1,
     10: Curses.serverMessages.message2,
     100: Curses.serverMessages.message3,
@@ -47,32 +48,58 @@ const client = new Client({intents: [
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
 
-client.once(Events.ClientReady, readyClient => {
-    if (readyClient) {
-        console.log('ready client via boolean value');
-        Curses.curses.forEach(curse => {
-            baseCurseRecord[curse] = true;
-        });
-        client.guilds.fetch().then(guilds => {
-            guilds.forEach(async guild => {
-                //collect each custom swear list for the server and build the overall records
-                let serverSwears = await servers.getServerCustomSwearList(guild.id);
-                let serverRecord: Record<string, boolean> = {};
-                serverSwears.forEach(swear => {
-                    serverRecord[swear] = true;
-                });
-                serverRecords[guild.id] = serverRecord;
-            });
-        })
-    } else {
-        console.error('unable to connect to discord client');
-    }
-});
-
+client.on(Events.ClientReady, handleReady);
 client.on(Events.MessageCreate, handleMessage);
+client.on(Events.InteractionCreate, handleInteraction);
+
+// client.once(Events.ClientReady, readyClient => {
+//     if (readyClient) {
+//         console.log('ready client via boolean value');
+//         Curses.curses.forEach(curse => {
+//             baseCurseRecord[curse] = true;
+//         });
+//         client.guilds.fetch().then(guilds => {
+//             guilds.forEach(async guild => {
+//                 //collect each custom swear list for the server and build the overall records
+//                 let serverSwears = await servers.getServerCustomSwearList(guild.id);
+//                 let serverRecord: Record<string, boolean> = {};
+//                 serverSwears.forEach(swear => {
+//                     serverRecord[swear] = true;
+//                 });
+//                 serverRecords[guild.id] = serverRecord;
+//             });
+//         })
+//     } else {
+//         console.error('unable to connect to discord client');
+//     }
+// });
+
+
 
 // Login to Discord with your client's token
 client.login(token);
+
+async function handleReady(client: Client<true>) {
+    console.log(`curseBot ${client.user?.username} online`);
+
+    //loading up our base curse records
+    for (const curse of Curses.curses) {
+        baseCurseRecord[curse] = true;
+    }
+    var guilds = await client.guilds.fetch();
+    guilds.forEach(async guild => {
+        //collect each custom swear list for the server and build the overall records
+        let serverSwears = await servers.getServerCustomSwearList(guild.id);
+        let serverRecord: Record<string, boolean> = {};
+        serverSwears.forEach(swear => {
+            serverRecord[swear] = true;
+        });
+        serverRecords[guild.id] = serverRecord;
+    });
+
+    //load our slash commands
+    installCommands();
+}
 
 async function handleMessage(msg: Message) {
     if (msg.author.id === client.user?.id) {
@@ -86,7 +113,38 @@ async function handleMessage(msg: Message) {
         if (msg.mentions.has(client.user!.id)) handleBotPing(msg);
         await parseMessage(msg);
     }
-    
+}
+
+async function handleInteraction(interaction: Interaction) {
+    if (!(interaction.channel instanceof TextChannel)) {
+        return;
+    }
+
+    if (interaction.isCommand()) {
+        handleSlashCommand(interaction);
+    }
+}
+
+async function handleSlashCommand(interaction: CommandInteraction) {
+    await Slash.handle(interaction);
+}
+
+//======== SLASH COMMANDS ===================================
+async function installCommands() {
+    console.log('loading commands');
+    const commands = [
+        Slash.ping()
+    ];
+
+    try {
+        const rest = new REST().setToken(token);
+        await rest.put(
+            Routes.applicationCommands(client.application!.id),
+            { body: commands }
+        );
+    } catch (e) {
+        console.error(`commands were unable to be installed: ${e}`);
+    }
 }
 
 async function handleCommand(msg: Message) {
@@ -281,10 +339,10 @@ async function userMessageEvaluator(curses: string[], userId: string, priorRecor
     for (let i = 0; i < curses.length; i++) {
         const priorCount = priorRecord[curses[i]] ?? 0;
         const currentCount = currentRecord[curses[i]];
-        for (const k in USERMILESTONES) {
+        for (const k in USER_MILESTONES) {
             const mile = +k;
             if (priorCount < mile && currentCount >= mile) {
-                responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${USERMILESTONES[k]}\n`;
+                responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${USER_MILESTONES[k]}\n`;
             }
         }
     }
@@ -297,13 +355,13 @@ async function serverMessageEvaluator(curses: string[], serverName: string, prio
     for (let i = 0; i < curses.length; i++) {
         const priorCount = priorRecord[curses[i]] ?? 0;
         const currentCount = currentRecord[curses[i]];
-        for (const k in SERVERMILESTONES) {
+        for (const k in SERVER_MILESTONES) {
             const mile = +k;
             if (priorCount < mile && currentCount >= mile) {
                 if (mile === 1) {
-                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} for the first time, ${SERVERMILESTONES[k]}\n`;
+                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} for the first time, ${SERVER_MILESTONES[k]}\n`;
                 } else {
-                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${SERVERMILESTONES[k]}\n`;
+                    responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${SERVER_MILESTONES[k]}\n`;
                 }
                 
             }

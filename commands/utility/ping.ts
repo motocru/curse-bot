@@ -1,11 +1,16 @@
-import { SlashCommandBuilder } from "discord.js";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 
-module.exports = {
-    data: new SlashCommandBuilder()
-            .setName('ping')
-            .setDescription('returns a pong to the user'),
-    async execute(interaction) {
-        console.log(interaction);
-        await interaction.reply('pong!');
-    }
-};
+function ping() {
+    return new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('replies with: Pong!')
+}
+
+async function handle(interaction: CommandInteraction) {
+    interaction.channel?.send("Pong!");
+}
+
+export default {
+    ping,
+    handle
+}
