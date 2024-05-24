@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Message, Events, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Message, Events } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -38,7 +38,11 @@ const USERMILESTONES: Record<number, string> = {
 
 const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
-const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages]});
+const client = new Client({intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent]});
 
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
@@ -71,7 +75,6 @@ client.on(Events.MessageCreate, handleMessage);
 client.login(token);
 
 async function handleMessage(msg: Message) {
-    
     if (msg.author.id === client.user?.id) {
         return;
     }
@@ -93,7 +96,6 @@ async function handleCommand(msg: Message) {
 
     switch(cmd) {
         case "HELP":
-            console.log(msg.author);
             msg.channel.send(Curses.helpMessage);
             break;
         //Prints the count of swear words in either a server or a given list of users
