@@ -1,5 +1,4 @@
-import { Client, Intents, Message } from "discord.js";
-import { BroadcastChannel } from "worker_threads";
+import { Client, GatewayIntentBits, Message, Events } from "discord.js";
 import { token } from './auth.json';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -39,35 +38,43 @@ const USERMILESTONES: Record<number, string> = {
 
 const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
-const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES]});
+const client = new Client({intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent]});
+
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
 
-client.once('ready', () => {
-    console.log('Bot is ready');
-    Curses.curses.forEach(curse => {
-        baseCurseRecord[curse] = true;
-    });
-    client.guilds.fetch().then(guilds => {
-        guilds.forEach(async guild => {
-            //collect each custom swear list for the server and build the overall records
-            let serverSwears = await servers.getServerCustomSwearList(guild.id);
-            let serverRecord: Record<string, boolean> = {};
-            serverSwears.forEach(swear => {
-                serverRecord[swear] = true;
-            });
-            serverRecords[guild.id] = serverRecord;
+client.once(Events.ClientReady, readyClient => {
+    if (readyClient) {
+        console.log('ready client via boolean value');
+        Curses.curses.forEach(curse => {
+            baseCurseRecord[curse] = true;
         });
-    })
+        client.guilds.fetch().then(guilds => {
+            guilds.forEach(async guild => {
+                //collect each custom swear list for the server and build the overall records
+                let serverSwears = await servers.getServerCustomSwearList(guild.id);
+                let serverRecord: Record<string, boolean> = {};
+                serverSwears.forEach(swear => {
+                    serverRecord[swear] = true;
+                });
+                serverRecords[guild.id] = serverRecord;
+            });
+        })
+    } else {
+        console.error('unable to connect to discord client');
+    }
 });
 
-client.on('messageCreate', handleMessage);
+client.on(Events.MessageCreate, handleMessage);
 
 // Login to Discord with your client's token
 client.login(token);
 
 async function handleMessage(msg: Message) {
-    
     if (msg.author.id === client.user?.id) {
         return;
     }
@@ -89,7 +96,6 @@ async function handleCommand(msg: Message) {
 
     switch(cmd) {
         case "HELP":
-            console.log(msg.author);
             msg.channel.send(Curses.helpMessage);
             break;
         //Prints the count of swear words in either a server or a given list of users
