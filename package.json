@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/motocru/curse-bot#readme",
   "devDependencies": {
-    "nodemon": "^2.0.22",
+    "nodemon": "^3.1.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
