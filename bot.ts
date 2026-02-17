@@ -1,6 +1,17 @@
-import { Client, GatewayIntentBits, Message, Events, REST, Routes, Interaction, TextChannel, CommandInteraction,  } from "discord.js";
-import Slash from './commands/utility/ping';
+import { Client, GatewayIntentBits, Message, Events, REST, Routes, Interaction, TextChannel, CommandInteraction, } from "discord.js";
 import { token } from './auth.json';
+import { installCommands } from './src/commands/install-commands';
+import { SlashCommand } from "./src/types";
+import { command as pingCommand } from './src/commands/ping';
+import { echoCommand } from './src/commands/echo';
+import { helpCommand } from './src/commands/help';
+import { totalCommand } from './src/commands/total';
+import { addCommand } from './src/commands/add';
+import { removeCommand } from './src/commands/remove';
+import { countCommand } from './src/commands/count';
+import { firstCommand } from './src/commands/first';
+import { wordCountCommand } from './src/commands/wordcount';
+import { rankCommand } from './src/commands/rank';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
 import * as users from './db/users';
@@ -18,9 +29,9 @@ const USER_MILESTONES: Record<number, string> = {
     400: Curses.userMessages.message10,
     450: Curses.userMessages.message11,
     500: Curses.userMessages.message12
-  }
-  
-  const SERVER_MILESTONES: Record<number, string> = {
+}
+
+const SERVER_MILESTONES: Record<number, string> = {
     1: Curses.serverMessages.message1,
     10: Curses.serverMessages.message2,
     100: Curses.serverMessages.message3,
@@ -35,15 +46,17 @@ const USER_MILESTONES: Record<number, string> = {
     2250: Curses.serverMessages.message12,
     2350: Curses.serverMessages.message13,
     2500: Curses.serverMessages.message14
-  }
+}
 
 const SWEAR_EDITOR_ROLE = 'SWEAR EDITOR'
 
-const client = new Client({intents: [
-    GatewayIntentBits.Guilds, 
-    GatewayIntentBits.GuildMembers, 
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent]});
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent]
+});
 
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
@@ -52,35 +65,11 @@ client.on(Events.ClientReady, handleReady);
 client.on(Events.MessageCreate, handleMessage);
 client.on(Events.InteractionCreate, handleInteraction);
 
-// client.once(Events.ClientReady, readyClient => {
-//     if (readyClient) {
-//         console.log('ready client via boolean value');
-//         Curses.curses.forEach(curse => {
-//             baseCurseRecord[curse] = true;
-//         });
-//         client.guilds.fetch().then(guilds => {
-//             guilds.forEach(async guild => {
-//                 //collect each custom swear list for the server and build the overall records
-//                 let serverSwears = await servers.getServerCustomSwearList(guild.id);
-//                 let serverRecord: Record<string, boolean> = {};
-//                 serverSwears.forEach(swear => {
-//                     serverRecord[swear] = true;
-//                 });
-//                 serverRecords[guild.id] = serverRecord;
-//             });
-//         })
-//     } else {
-//         console.error('unable to connect to discord client');
-//     }
-// });
-
-
-
 // Login to Discord with your client's token
 client.login(token);
 
 async function handleReady(client: Client<true>) {
-    console.log(`curseBot ${client.user?.username} online`);
+    console.log(`curse bot ${client.user?.username} online`);
 
     //loading up our base curse records
     for (const curse of Curses.curses) {
@@ -97,8 +86,10 @@ async function handleReady(client: Client<true>) {
         serverRecords[guild.id] = serverRecord;
     });
 
-    //load our slash commands
-    installCommands();
+    //load our slash commands for each guild for instant updates
+    guilds.forEach(guild => {
+        installCommands(client.application!.id, guild.id);
+    });
 }
 
 async function handleMessage(msg: Message) {
@@ -115,35 +106,36 @@ async function handleMessage(msg: Message) {
     }
 }
 
+// A collection or map to store your commands
+const commands = new Map<string, SlashCommand>();
+commands.set(pingCommand.data.name, pingCommand);
+commands.set(echoCommand.data.name, echoCommand);
+commands.set(helpCommand.data.name, helpCommand);
+commands.set(totalCommand.data.name, totalCommand);
+commands.set(addCommand.data.name, addCommand);
+commands.set(removeCommand.data.name, removeCommand);
+commands.set(countCommand.data.name, countCommand);
+commands.set(firstCommand.data.name, firstCommand);
+commands.set(wordCountCommand.data.name, wordCountCommand);
+commands.set(rankCommand.data.name, rankCommand);
+
 async function handleInteraction(interaction: Interaction) {
     if (!(interaction.channel instanceof TextChannel)) {
         return;
     }
 
-    if (interaction.isCommand()) {
-        handleSlashCommand(interaction);
+    if (!interaction.isChatInputCommand()) return;
+    const command = commands.get(interaction.commandName);
+    if (!command) {
+        console.error(`No command matching ${interaction.commandName} was found`);
+        return;
     }
-}
-
-async function handleSlashCommand(interaction: CommandInteraction) {
-    await Slash.handle(interaction);
-}
-
-//======== SLASH COMMANDS ===================================
-async function installCommands() {
-    console.log('loading commands');
-    const commands = [
-        Slash.ping()
-    ];
 
     try {
-        const rest = new REST().setToken(token);
-        await rest.put(
-            Routes.applicationCommands(client.application!.id),
-            { body: commands }
-        );
-    } catch (e) {
-        console.error(`commands were unable to be installed: ${e}`);
+        await command.execute(interaction, client);
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
     }
 }
 
@@ -152,14 +144,11 @@ async function handleCommand(msg: Message) {
     let args = capMessage.substring(1).split(' ');
     const cmd = args[0];
 
-    switch(cmd) {
-        case "HELP":
-            msg.channel.send(Curses.helpMessage);
-            break;
+    switch (cmd) {
         //Prints the count of swear words in either a server or a given list of users
         case "COUNT":
             //if we have more than one user mentioned then we check the count for that user
-            if (msg.mentions.users.size > 0) {  
+            if (msg.mentions.users.size > 0) {
                 msg.mentions.users.forEach(async user => {
                     const guildUser = msg.guild?.members.resolve(user.id);
                     msg.channel.send(await getCurseCountForUser(msg.guildId, user.id, guildUser!.displayName))
@@ -217,7 +206,7 @@ async function handleCommand(msg: Message) {
                         });
                     }
                 });
-                
+
             } else {
                 args.forEach(async curse => {
                     //determine if the curse word exists in base or server list
@@ -294,7 +283,7 @@ function handleBotPing(msg: Message) {
 async function parseMessage(msg: Message) {
     let message = msg.content.toLocaleUpperCase();
     let parsedCurses: string[] = [];
-    message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g,' ');
+    message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g, ' ');
     message = message.replace(/<@[0-9]+>/gi, '');
     const baseWords = message.match(new RegExp(`\\b(${Curses.curses.join("|")})\\b`, "gi"));
     const serverCurseList = await servers.getServerCustomSwearList(msg.guildId!);
@@ -323,13 +312,13 @@ async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
     }
     const newUserSwearRecord = await users.addUserSwear(msg.guildId!, msg.author.id, curses);
     const newServerSwearRecord = await servers.getServerSwearTotal(msg.guildId!);
-    curses = curses.filter(function(elem, index, self) {
+    curses = curses.filter(function (elem, index, self) {
         return index === self.indexOf(elem);
     });
     const userMessage = await userMessageEvaluator(curses, msg.author.id, priorUserSwearRecord, newUserSwearRecord);
     const serverMessage = await serverMessageEvaluator(curses, msg.guild?.name!, priorServerSwearRecord, newServerSwearRecord);
-    if ((userMessage+serverMessage).length > 0) {
-        msg.channel.send(userMessage+serverMessage);
+    if ((userMessage + serverMessage).length > 0) {
+        msg.channel.send(userMessage + serverMessage);
     }
 }
 
@@ -363,7 +352,7 @@ async function serverMessageEvaluator(curses: string[], serverName: string, prio
                 } else {
                     responseString += `${addressorText} has used ${curses[i].toLowerCase()} over ${mile} times, ${SERVER_MILESTONES[k]}\n`;
                 }
-                
+
             }
         }
     }
@@ -379,25 +368,25 @@ async function getCurseCountForServer(guildId: string | null, guildName: string 
 async function getCurseCountForUser(guildId: string | null, userId: string, nickname: string) {
     let responseString = `Total number of times ${nickname} has swore:\n`;
     const swearCount: number = await users.totalUserSwearCount(guildId!, userId);
-    return responseString += swearCount > 0 ?  swearCount : `${nickname} is pure and has not cursed yet`;
+    return responseString += swearCount > 0 ? swearCount : `${nickname} is pure and has not cursed yet`;
 }
 
 async function getWordCountForServer(guildId: string, guildName: string, curseWord: string) {
     let responseString = `Swear word counts for ${guildName}:\n`;
     const swearCount: number = await servers.getServerSpecificSwearCount(guildId!, curseWord);
-    return responseString += swearCount > 0 ?  swearCount : `${guildName} has not yet uttered '${curseWord}'`;
+    return responseString += swearCount > 0 ? swearCount : `${guildName} has not yet uttered '${curseWord}'`;
 }
 
 async function getWordCountForUser(guildId: string, userId: string, nickname: string, curseWord: string) {
     let responseString = `number of times ${curseWord} used by ${nickname}:\n`;
     const swearCount: number = await users.getUserSpecificSwearWordCount(guildId!, userId, curseWord);
-    return responseString += swearCount > 0 ?  swearCount : `${nickname} has not yet uttered '${curseWord}'`;
+    return responseString += swearCount > 0 ? swearCount : `${nickname} has not yet uttered '${curseWord}'`;
 }
 
 async function getTotalSwearCountForServer(guildId: string, guildName: string): Promise<string> {
     let responseString = `Swear totals for ${guildName}:\n`;
     const serverSwearTotals: Record<string, number> = await servers.getServerSwearTotal(guildId);
-    const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(serverSwearTotals);
+    const sortedSwearArray: Array<{ key: string, count: number }> = sortRecord(serverSwearTotals);
     sortedSwearArray.forEach(x => {
         responseString += `${x.key}: ${x.count}\n`;
     });
@@ -407,7 +396,7 @@ async function getTotalSwearCountForServer(guildId: string, guildName: string): 
 async function getTotalSwearCountForUser(guildId: string, userId: string, nickname: string) {
     let responseString = `Swear totals for ${nickname}:\n`;
     const userSwearTotals: Record<string, number> = await users.getUserSwearRecord(guildId, userId);
-    const sortedSwearArray: Array<{key: string, count: number}> = sortRecord(userSwearTotals);
+    const sortedSwearArray: Array<{ key: string, count: number }> = sortRecord(userSwearTotals);
     sortedSwearArray.forEach(x => {
         responseString += `${x.key}: ${x.count}\n`;
     });
@@ -417,7 +406,7 @@ async function getTotalSwearCountForUser(guildId: string, userId: string, nickna
 async function getRankForServer(guildId: string, guildName: string): Promise<string> {
     let responseString = `Rankings for ${guildName}:\n`;
     const serverRankings: Record<string, number> = await servers.getServerSwearUseRankings(guildId);
-    const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
+    const sortedRankings: Array<{ key: string, count: number }> = sortRecord(serverRankings);
     if (sortedRankings.length > 0) {
         sortedRankings.forEach(x => {
             responseString += `<@${x.key}>: ${x.count} swears\n`;
@@ -431,7 +420,7 @@ async function getRankForServer(guildId: string, guildName: string): Promise<str
 async function getRankForCurseWord(guildId: string, guildName: string, curse: string): Promise<string> {
     let responseString = `Rankings for ${curse} on ${guildName}:\n`;
     const serverRankings: Record<string, number> = await servers.getServerSpecificSwearRankings(guildId, curse);
-    const sortedRankings: Array<{key: string, count: number}> = sortRecord(serverRankings);
+    const sortedRankings: Array<{ key: string, count: number }> = sortRecord(serverRankings);
     if (sortedRankings.length > 0) {
         sortedRankings.forEach(x => {
             responseString += `<@${x.key}>: ${x.count} swears\n`;
@@ -442,12 +431,12 @@ async function getRankForCurseWord(guildId: string, guildName: string, curse: st
     return responseString;
 }
 
-function sortRecord(swearRecord: Record<string, number>): Array<{key: string, count: number}> {
-    let sorted: Array<{key: string, count: number}> = [];
+function sortRecord(swearRecord: Record<string, number>): Array<{ key: string, count: number }> {
+    let sorted: Array<{ key: string, count: number }> = [];
     for (var curse in swearRecord) {
-        sorted.push({ key: curse, count: swearRecord[curse]});
+        sorted.push({ key: curse, count: swearRecord[curse] });
     }
-    sorted.sort(function(a, b) {
+    sorted.sort(function (a, b) {
         return b.count - a.count;
     });
     return sorted;
@@ -466,14 +455,14 @@ function getQuoteArguments(msg: Message, args: string[]): string[] {
     }
     //get all words in between quotes
     args = args.filter(x => !x.match(/<@[0-9]+>/gi));
-    args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g,' '));
+    args = args.map(x => x.replace(/[.,\/#!$'%?\^&\*;:{}=\-_`~()\[\]]/g, ' '));
     let quoteArgs = args.join(" ").match(/("|“)([A-z]+|\s+)*[A-z]([A-z]+|\s+)*("|”)/gi);
 
     if (quoteArgs == null || quoteArgs?.length < 1) {
         msg.channel.send(Curses.wrapInQuotesMessage);
         return [];
     }
-    return quoteArgs?.map(x => x.substring(1, x.length-1).trim()) ?? []; //removing the quotes and unneeded whitespace
+    return quoteArgs?.map(x => x.substring(1, x.length - 1).trim()) ?? []; //removing the quotes and unneeded whitespace
 }
 
 function filterNewCursesToAdd(newCurses: string[], guildId: string): string[] {
