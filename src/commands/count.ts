@@ -8,15 +8,22 @@ export const countCommand: SlashCommand = {
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('the user to count curse words for')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('curse')
+                .setDescription('the curse word to count')
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction, client: Client) {
         const user = interaction.options.getUser('user');
+        const curse = interaction.options.getString('curse');
         if (user) {
             var member = await interaction.guild?.members.fetch(user.id);
             //TODO: get total curse count for the user
             await interaction.reply(`total curse count for ${member?.displayName}`);
         } else {
             //TODO: get total curse count for the server
+            //TODO: determine if we have a curse word specified
+            //TODO: get the count for the specified curse word or just the user
             await interaction.reply('total curse count for the server');
         }
     },

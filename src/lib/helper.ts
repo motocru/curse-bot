@@ -9,5 +9,6 @@ async function canEditSwearList(member: GuildMember, user: User) {
     //      based on if the user has the SWEAR EDITOR role
     member.roles.guild.roles.cache.get(SWEAR_EDITOR_ROLE);
     if (member.roles.cache.some(role => role.name === SWEAR_EDITOR_ROLE)) return true;
+
     return false;
 }

@@ -10,7 +10,6 @@ import { addCommand } from './src/commands/add';
 import { removeCommand } from './src/commands/remove';
 import { countCommand } from './src/commands/count';
 import { firstCommand } from './src/commands/first';
-import { wordCountCommand } from './src/commands/wordcount';
 import { rankCommand } from './src/commands/rank';
 import * as Curses from './curses.json';
 import * as servers from './db/servers';
@@ -116,7 +115,6 @@ commands.set(addCommand.data.name, addCommand);
 commands.set(removeCommand.data.name, removeCommand);
 commands.set(countCommand.data.name, countCommand);
 commands.set(firstCommand.data.name, firstCommand);
-commands.set(wordCountCommand.data.name, wordCountCommand);
 commands.set(rankCommand.data.name, rankCommand);
 
 async function handleInteraction(interaction: Interaction) {
