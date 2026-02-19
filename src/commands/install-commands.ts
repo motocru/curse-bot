@@ -1,26 +1,20 @@
 import { REST, Routes } from 'discord.js';
-import { command as pingCommand } from './ping';
-import { echoCommand } from './echo';
 import { helpCommand } from './help';
 import { totalCommand } from './total';
 import { addCommand } from './add';
 import { removeCommand } from './remove';
 import { countCommand } from './count';
 import { firstCommand } from './first';
-import { wordCountCommand } from './wordcount';
 import { rankCommand } from './rank';
 import { token as TOKEN } from '../../auth.json';
 
 const commands = [
-    pingCommand.data.toJSON(),
-    echoCommand.data.toJSON(),
     helpCommand.data.toJSON(),
     totalCommand.data.toJSON(),
     addCommand.data.toJSON(),
     removeCommand.data.toJSON(),
     countCommand.data.toJSON(),
     firstCommand.data.toJSON(),
-    wordCountCommand.data.toJSON(),
     rankCommand.data.toJSON()
 ];
 

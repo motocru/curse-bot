@@ -2,8 +2,6 @@ import { Client, GatewayIntentBits, Message, Events, REST, Routes, Interaction, 
 import { token } from './auth.json';
 import { installCommands } from './src/commands/install-commands';
 import { SlashCommand } from "./src/types";
-import { command as pingCommand } from './src/commands/ping';
-import { echoCommand } from './src/commands/echo';
 import { helpCommand } from './src/commands/help';
 import { totalCommand } from './src/commands/total';
 import { addCommand } from './src/commands/add';
@@ -12,8 +10,8 @@ import { countCommand } from './src/commands/count';
 import { firstCommand } from './src/commands/first';
 import { rankCommand } from './src/commands/rank';
 import * as Curses from './curses.json';
-import * as servers from './db/servers';
-import * as users from './db/users';
+import * as servers from './src/db/servers';
+import * as users from './src/db/users';
 
 /**adding the  message constants below */
 const USER_MILESTONES: Record<number, string> = {
@@ -107,8 +105,6 @@ async function handleMessage(msg: Message) {
 
 // A collection or map to store your commands
 const commands = new Map<string, SlashCommand>();
-commands.set(pingCommand.data.name, pingCommand);
-commands.set(echoCommand.data.name, echoCommand);
 commands.set(helpCommand.data.name, helpCommand);
 commands.set(totalCommand.data.name, totalCommand);
 commands.set(addCommand.data.name, addCommand);
@@ -377,7 +373,7 @@ async function getWordCountForServer(guildId: string, guildName: string, curseWo
 
 async function getWordCountForUser(guildId: string, userId: string, nickname: string, curseWord: string) {
     let responseString = `number of times ${curseWord} used by ${nickname}:\n`;
-    const swearCount: number = await users.getUserSpecificSwearWordCount(guildId!, userId, curseWord);
+    const swearCount: number = await users.getUserSpecificSwearCountAsync(guildId!, userId, curseWord);
     return responseString += swearCount > 0 ? swearCount : `${nickname} has not yet uttered '${curseWord}'`;
 }
 
@@ -403,7 +399,7 @@ async function getTotalSwearCountForUser(guildId: string, userId: string, nickna
 
 async function getRankForServer(guildId: string, guildName: string): Promise<string> {
     let responseString = `Rankings for ${guildName}:\n`;
-    const serverRankings: Record<string, number> = await servers.getServerSwearUseRankings(guildId);
+    const serverRankings: Record<string, number> = await servers.getServerSwearRankingsAsync(guildId);
     const sortedRankings: Array<{ key: string, count: number }> = sortRecord(serverRankings);
     if (sortedRankings.length > 0) {
         sortedRankings.forEach(x => {

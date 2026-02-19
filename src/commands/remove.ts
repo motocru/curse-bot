@@ -1,5 +1,7 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, Client, GuildMember } from "discord.js";
+import { removeSwearFromCustomListAsync } from "../db/servers";
+import { canEditSwearList } from "../lib/helper";
 
 export const removeCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -10,10 +12,22 @@ export const removeCommand: SlashCommand = {
                 .setDescription('the curse to remove')
                 .setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction, client: Client) {
+        //first check if user has permission to edit the swear list
+        var canEdit = await canEditSwearList(interaction.member as GuildMember);
+        if (!canEdit) {
+            await interaction.reply('you do not have permission to edit the swear list');
+            return;
+        }
+        //get the curse word from the interaction
         const curse = interaction.options.getString('curse');
         if (curse) {
-            //TODO: remove curse from the database for the given server
-            await interaction.reply(`removed ${curse} from the list`);
+            //remove the curse word from the server's swear list
+            const removedCurse = await removeSwearFromCustomListAsync(interaction.guildId!, curse);
+            if (removedCurse) {
+                await interaction.reply(`removed "${curse}" from the list of swear words for ${interaction.guild?.name}`);
+            } else {
+                await interaction.reply(`"${curse}" is not in the list of swear words for ${interaction.guild?.name}`);
+            }
         } else {
             await interaction.reply('unable to remove curse');
         }

@@ -7,9 +7,9 @@ const getOrCreateUser = async (guildId: string, userId: string): Promise<User> =
     const user = server?.users.find(u => u.id === userId);
     if (user === undefined || user === null) {
         //create new user
-        const newUserData: User = { id: userId, swears: {}};
+        const newUserData: User = { id: userId, swears: {} };
         server.users = [...server.users, newUserData];
-        await db?.collection<Server>(guildId)?.updateOne({_id: guildId}, {$set: {users: server.users}});
+        await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { users: server.users } });
         return newUserData;
     } else {
         return user;
@@ -25,7 +25,16 @@ export const totalUserSwearCount = async (guildId: string, userId: string): Prom
     return swearCount;
 }
 
-export const getUserSpecificSwearWordCount = async (guildId: string, userId: string, swearWord: string): Promise<number> => {
+export const getUserSwearCountAsync = async (guildId: string, userId: string): Promise<number> => {
+    const user = await getOrCreateUser(guildId, userId);
+    let swearCount: number = 0;
+    for (const swear in user?.swears) {
+        swearCount += user?.swears[swear] ?? 0;
+    }
+    return swearCount;
+}
+
+export const getUserSpecificSwearCountAsync = async (guildId: string, userId: string, swearWord: string): Promise<number> => {
     const server = await getOrCreateServer(guildId);
     const user = server?.users.find(u => u.id === userId);
     return user?.swears[swearWord] ?? 0;
@@ -48,6 +57,6 @@ export const addUserSwear = async (guildId: string, userId: string, curses: stri
     const server = await getOrCreateServer(guildId);
     const updateIndex = server.users.findIndex(u => u.id === userId);
     server.users[updateIndex] = user;
-    await db?.collection<Server>(guildId).updateOne({_id: guildId}, {$set: { users: server.users }});
+    await db?.collection<Server>(guildId).updateOne({ _id: guildId }, { $set: { users: server.users } });
     return user.swears;
 }

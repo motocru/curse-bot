@@ -1,5 +1,8 @@
 import { SlashCommand } from "../types";
 import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { getServerSwearTotal } from "../db/servers";
+import { getUserSwearRecord } from "../db/users";
+import { serverNoSwearsFound } from "../lib/helper";
 
 export const totalCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -13,11 +16,29 @@ export const totalCommand: SlashCommand = {
         const user = interaction.options.getUser('user');
         if (user) {
             var member = await interaction.guild?.members.fetch(user.id);
-            //TODO: get total curse count for the user
-            await interaction.reply(`total curse count for ${member?.displayName}`);
+            const rankings = await getUserSwearRecord(interaction.guildId!, user.id);
+            const responseString = await swearStringBuilder(rankings);
+            if (responseString === '') {
+                await interaction.reply(`No rankings found for ${member?.displayName}`);
+            } else {
+                await interaction.reply(responseString);
+            }
         } else {
-            //TODO: get total curse count for the server
-            await interaction.reply('total curse count for the server');
+            const rankings = await getServerSwearTotal(interaction.guildId!);
+            const responseString = await swearStringBuilder(rankings);
+            if (responseString === '') {
+                await interaction.reply(serverNoSwearsFound);
+            } else {
+                await interaction.reply(responseString);
+            }
         }
     },
+}
+
+function swearStringBuilder(curses: Record<string, number>) {
+    let responseString = '';
+    Object.entries(curses).map(([key, value]) => {
+        responseString += `${key}: ${value}\n`;
+    })
+    return responseString;
 }

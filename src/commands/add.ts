@@ -1,5 +1,7 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, Client, GuildMember } from "discord.js";
+import { canEditSwearList } from "../lib/helper";
+import { addSwearToCustomListAsync } from "../db/servers";
 
 export const addCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -10,11 +12,22 @@ export const addCommand: SlashCommand = {
                 .setDescription('the curse to add')
                 .setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction, client: Client) {
-        console.log(interaction.user);
+        //first check if user has permission to edit the swear list
+        var canEdit = await canEditSwearList(interaction.member as GuildMember);
+        if (!canEdit) {
+            await interaction.reply('you do not have permission to edit the swear list');
+            return;
+        }
+        //get the curse word from the interaction
         const curse = interaction.options.getString('curse');
         if (curse) {
-            //TODO: add curse to the database for the given server
-            await interaction.reply(`added ${curse} to the list`);
+            //add the curse word to the server's swear list
+            var addedSwear = await addSwearToCustomListAsync(interaction.guildId!, curse);
+            if (addedSwear) {
+                await interaction.reply(`added "${curse}" to the list of swear words for ${interaction.guild?.name}`);
+            } else {
+                await interaction.reply(`"${curse}" is already in the list of swear words for ${interaction.guild?.name}`);
+            }
         } else {
             await interaction.reply('unable to add curse');
         }
