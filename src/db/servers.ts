@@ -74,6 +74,12 @@ export const getServerSealBreaker = async (guildId: string): Promise<string | nu
     return server?.firstCurseUserId ?? null;
 }
 
+/**
+ * Sets the user who swore first on a server
+ * @param guildId Id of the server being checked
+ * @param userId Id of the user who swore first on the server
+ * @returns void
+ */
 export const setServerSealBreaker = async (guildId: string, userId: string): Promise<void> => {
     const server = await getOrCreateServer(guildId);
     server.firstCurseUserId = userId;
@@ -88,19 +94,6 @@ export const setServerSealBreaker = async (guildId: string, userId: string): Pro
 export const getServerCustomSwearList = async (guildId: string): Promise<string[]> => {
     const server = await getOrCreateServer(guildId);
     return server?.swears ?? [];
-}
-
-/**
- * Adds a list of custom swears to a server and returns fully formed swear list
- * @param guildId Id of the server being checked
- * @param swears string array of swears to add to the server
- * @returns fully updated list of custom swears on a server
- */
-export const addToServerCustomSwearList = async (guildId: string, swears: string[]): Promise<string[]> => {
-    const server = await getOrCreateServer(guildId);
-    const updatedSwears = [...server?.swears ?? [], ...swears];
-    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { swears: updatedSwears } });
-    return updatedSwears ?? [];
 }
 
 /**
@@ -133,19 +126,6 @@ export const removeSwearFromCustomListAsync = async (guildId: string, swear: str
     server.swears = server.swears.filter(word => word !== swear);
     await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { swears: server.swears } });
     return true;
-}
-
-/**
- * Removes given curse words from the custom swear list returning the remaining curse words
- * @param guildId Id of the server having words removed from
- * @param swears string array of swears to be removed from the server
- * @returns remaining custom swear list after removal
- */
-export const removeFromServerCustomSwearList = async (guildId: string, swears: string[]): Promise<string[]> => {
-    const server = await getOrCreateServer(guildId);
-    const updatedSwears = server.swears.filter(word => !swears.includes(word));
-    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { swears: updatedSwears } });
-    return updatedSwears;
 }
 
 /**

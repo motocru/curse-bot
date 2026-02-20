@@ -9,9 +9,9 @@ import { removeCommand } from './commands/remove';
 import { countCommand } from './commands/count';
 import { firstCommand } from './commands/first';
 import { rankCommand } from './commands/rank';
+import { getServerCustomSwearList, getServerSwearTotal, setServerSealBreaker } from './db/servers';
+import { getUserSwearRecord, addUserSwear } from './db/users';
 import * as Curses from '../curses.json';
-import * as servers from './db/servers';
-import * as users from './db/users';
 
 /**adding the  message constants below */
 const USER_MILESTONES: Record<number, string> = {
@@ -83,7 +83,7 @@ async function handleReady(client: Client<true>) {
     var guilds = await client.guilds.fetch();
     guilds.forEach(async guild => {
         //collect each custom swear list for the server and build the overall records
-        let serverSwears = await servers.getServerCustomSwearList(guild.id);
+        let serverSwears = await getServerCustomSwearList(guild.id);
         let serverRecord: Record<string, boolean> = {};
         serverSwears.forEach(swear => {
             serverRecord[swear] = true;
@@ -137,7 +137,7 @@ async function parseMessage(msg: Message) {
     message = message.replace(/[.,\/#!$'"%?\^&\*;:{}=\-_`~()\[\]]/g, ' ');
     message = message.replace(/<@[0-9]+>/gi, '');
     const baseWords = message.match(new RegExp(`\\b(${Curses.curses.join("|")})\\b`, "gi"));
-    const serverCurseList = await servers.getServerCustomSwearList(msg.guildId!);
+    const serverCurseList = await getServerCustomSwearList(msg.guildId!);
     const serverWords = message.match(new RegExp(`\\b(${serverCurseList.join("|")})\\b`, "gi"));
     //TODO: is there a better way to combine these so we don't create empty strings in this list?
     if (baseWords !== null) {
@@ -151,18 +151,18 @@ async function parseMessage(msg: Message) {
 }
 
 async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
-    const priorUserSwearRecord = await users.getUserSwearRecord(msg.guildId!, msg.author.id);
-    const priorServerSwearRecord = await servers.getServerSwearTotal(msg.guildId!);
+    const priorUserSwearRecord = await getUserSwearRecord(msg.guildId!, msg.author.id);
+    const priorServerSwearRecord = await getServerSwearTotal(msg.guildId!);
     if (Object.keys(priorServerSwearRecord).length === 0) {
         //save the user as the first person to swear on the server
-        await servers.setServerSealBreaker(msg.guildId!, msg.author.id);
+        await setServerSealBreaker(msg.guildId!, msg.author.id);
     }
     if (Object.keys(priorUserSwearRecord).length === 0) {
         //send a message for a user cursing for the first time
         msg.channel.send(`<@${msg.author.id}> ${Curses.userMessages.message1}`);
     }
-    const newUserSwearRecord = await users.addUserSwear(msg.guildId!, msg.author.id, curses);
-    const newServerSwearRecord = await servers.getServerSwearTotal(msg.guildId!);
+    const newUserSwearRecord = await addUserSwear(msg.guildId!, msg.author.id, curses);
+    const newServerSwearRecord = await getServerSwearTotal(msg.guildId!);
     curses = curses.filter(function (elem, index, self) {
         return index === self.indexOf(elem);
     });
@@ -173,6 +173,14 @@ async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
     }
 }
 
+/**
+ * Evaluates the user's curses count to see if they've reached any milestones
+ * @param curses The list of curses used in the message
+ * @param userId The user's ID
+ * @param priorRecord The prior user's curse record
+ * @param currentRecord The current user's curse record
+ * @returns 
+ */
 async function userMessageEvaluator(curses: string[], userId: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
     let responseString = ``;
     const addresserText = `<@${userId}>`;
@@ -189,6 +197,14 @@ async function userMessageEvaluator(curses: string[], userId: string, priorRecor
     return responseString;
 }
 
+/**
+ * Evaluates the server's curses count to see if they've reached any milestones
+ * @param curses The list of curses used in the message
+ * @param serverName The name of the server
+ * @param priorRecord The prior server's curse record
+ * @param currentRecord The current server's curse record
+ * @returns 
+ */
 async function serverMessageEvaluator(curses: string[], serverName: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
     let responseString = ``;
     const addresserText = `${serverName}`;
