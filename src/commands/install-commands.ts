@@ -6,7 +6,6 @@ import { removeCommand } from './remove';
 import { countCommand } from './count';
 import { firstCommand } from './first';
 import { rankCommand } from './rank';
-import { token as TOKEN } from '../../auth.json';
 
 const commands = [
     helpCommand.data.toJSON(),
@@ -18,6 +17,12 @@ const commands = [
     rankCommand.data.toJSON()
 ];
 
+
+const TOKEN = process.env.TOKEN;
+
+if (!TOKEN) {
+    throw new Error("TOKEN not found");
+}
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 

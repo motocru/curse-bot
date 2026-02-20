@@ -286,6 +286,11 @@ discord.js@^14.15.2:
     tslib "2.6.2"
     undici "6.13.0"
 
+dotenv@^17.3.1:
+  version "17.3.1"
+  resolved "https://registry.npmjs.org/dotenv/-/dotenv-17.3.1.tgz"
+  integrity sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==
+
 fast-deep-equal@^3.1.3, fast-deep-equal@3.1.3:
   version "3.1.3"
   resolved "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz"

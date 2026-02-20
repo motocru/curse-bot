@@ -1,5 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 import { Client, GatewayIntentBits, Message, Events, Interaction, TextChannel } from "discord.js";
-import { token } from '../auth.json';
 import { installCommands } from './commands/install-commands';
 import { SlashCommand } from "./types";
 import { helpCommand } from './commands/help';
@@ -71,7 +72,7 @@ commands.set(firstCommand.data.name, firstCommand);
 commands.set(rankCommand.data.name, rankCommand);
 
 // Login to Discord with your client's token
-client.login(token);
+client.login(process.env.TOKEN);
 
 async function handleReady(client: Client<true>) {
     console.log(`curse bot ${client.user?.username} online`);
