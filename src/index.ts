@@ -27,7 +27,7 @@ const client = new Client({
 let serverRecords: Record<string, Record<string, boolean>> = {};
 let baseCurseRecord: Record<string, boolean> = {};
 
-client.on(Events.ClientReady, handleReady);
+client.once(Events.ClientReady, handleReady);
 client.on(Events.MessageCreate, handleMessage);
 client.on(Events.InteractionCreate, handleInteraction);
 

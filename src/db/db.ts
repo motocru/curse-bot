@@ -1,7 +1,7 @@
 import { MongoClient, Db, ServerApiVersion } from 'mongodb';
 export let db: Db | undefined;
 
-const client = new MongoClient('mongodb://localhost:27017', {
+const client = new MongoClient(process.env.MONGODB_URI!, {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,

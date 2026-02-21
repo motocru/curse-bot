@@ -32,18 +32,16 @@ RUN npm install --only=production
 # Copy the transpiled JavaScript files from the 'bin' (or 'build') directory
 # Update 'bin' to match your tsconfig.json output directory
 COPY --from=builder /app/bin ./bin
-
-# Ensure environment variables (like your Discord bot token) are passed at runtime
-# ENV DISCORD_TOKEN="YOUR_TOKEN_HERE" 
+ENV NODE_ENV=production
 
 # Set the command to run the built JavaScript file
 
-CMD ["node", "./bin/index.js"] 
+CMD ["node", "./bin/src/index.js"] 
 # COPY --from=builder /app/bin ./bin
 # COPY --from=builder /app/node_modules ./node_modules
 # COPY --from=builder /app/auth.json ./auth.json
 # COPY --from=builder /app/curses.json ./curses.json
 
-# ENV NODE_ENV=production
+
 
 # CMD ["node", "src/index.js"]
