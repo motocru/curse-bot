@@ -165,3 +165,53 @@ export const getServerSpecificSwearRankings = async (guildId: string, curse: str
     }));
     return userSwearTotals;
 }
+
+/**
+ * Gets a Record of each user milestone and the message associated with it
+ * @param guildId Id of the user milestones being retrieved for
+ * @returns record of user milestones and their associated messages
+ */
+export const getUserMilestones = async (guildId: string): Promise<Record<number, string>> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.userMilestones) server.userMilestones = {};
+    return server.userMilestones;
+}
+
+/**
+ * Gets a Record of each server milestone and the message associated with it
+ * @param guildId Id of the server milestones being retrieved for
+ * @returns record of server milestones and their associated messages
+ */
+export const getServerMilestones = async (guildId: string): Promise<Record<number, string>> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.serverMilestones) server.serverMilestones = {};
+    return server.serverMilestones;
+}
+
+/**
+ * Adds a milestone for user swearing amounts
+ * @param guildId Id of the server to add the milestone to
+ * @param milestone milestone to add to the user
+ * @param message message to display when the milestone is reached
+ * @returns void
+ */
+export const addUserMilestone = async (guildId: string, milestone: number, message: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.userMilestones) server.userMilestones = {};
+    server.userMilestones[milestone] = message;
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { userMilestones: server.userMilestones } });
+}
+
+/**
+ * Adds a milestone for server swearing amounts
+ * @param guildId Id of the server to add the milestone to
+ * @param milestone milestone to add to the server
+ * @param message message to display when the milestone is reached
+ * @returns void
+ */
+export const addServerMilestone = async (guildId: string, milestone: number, message: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.serverMilestones) server.serverMilestones = {};
+    server.serverMilestones[milestone] = message;
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { serverMilestones: server.serverMilestones } });
+}

@@ -20,7 +20,7 @@ async function run() {
         console.log('ping successful');
         /** below is a code to delete the tables so i can just un-comment this
          * rather than type it out everytime*/
-        // db.dropDatabase();
+        //db.dropDatabase();
     } finally {
         //ensure our closure of the client connection
         //client.close();

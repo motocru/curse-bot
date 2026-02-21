@@ -1,10 +1,11 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../types";
+import { addServerMilestone } from "../db/servers";
 
-export const addUserMilestoneCommand: SlashCommand = {
+export const addServerMilestoneCommand: SlashCommand = {
     data: new SlashCommandBuilder()
-        .setName('add-user-milestone')
-        .setDescription('Adds a user milestone')
+        .setName('add-server-milestone')
+        .setDescription('Adds a server milestone')
         .addIntegerOption(option =>
             option.setName('milestone')
                 .setDescription('The milestone to add')
@@ -14,11 +15,13 @@ export const addUserMilestoneCommand: SlashCommand = {
                 .setDescription('The message to send when the milestone is reached')
                 .setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction) {
-        const user = interaction.options.getUser('user');
         const milestone = interaction.options.getInteger('milestone');
-        if (user && milestone) {
-            //await addUserMilestone(interaction.guildId, user.id, milestone);
-            await interaction.reply(`Added milestone ${milestone} for user ${user.username}`);
+        const message = interaction.options.getString('message');
+        if (milestone && message) {
+            await addServerMilestone(interaction.guildId!, milestone, message);
+            await interaction.reply(`Added milestone for server swearing`);
+        } else {
+            await interaction.reply(`Missing required arguments of milestone and message`);
         }
     }
 };

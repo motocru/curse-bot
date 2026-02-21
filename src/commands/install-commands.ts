@@ -6,6 +6,8 @@ import { removeCommand } from './remove';
 import { countCommand } from './count';
 import { firstCommand } from './first';
 import { rankCommand } from './rank';
+import { addServerMilestoneCommand } from './add-server-milestone';
+import { addUserMilestoneCommand } from './add-user-milestone';
 
 const commands = [
     helpCommand.data.toJSON(),
@@ -14,7 +16,9 @@ const commands = [
     removeCommand.data.toJSON(),
     countCommand.data.toJSON(),
     firstCommand.data.toJSON(),
-    rankCommand.data.toJSON()
+    rankCommand.data.toJSON(),
+    addServerMilestoneCommand.data.toJSON(),
+    addUserMilestoneCommand.data.toJSON()
 ];
 
 

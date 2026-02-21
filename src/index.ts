@@ -10,6 +10,8 @@ import { removeCommand } from './commands/remove';
 import { countCommand } from './commands/count';
 import { firstCommand } from './commands/first';
 import { rankCommand } from './commands/rank';
+import { addServerMilestoneCommand } from './commands/add-server-milestone';
+import { addUserMilestoneCommand } from './commands/add-user-milestone';
 import { getServerCustomSwearList, getServerSwearTotal, setServerSealBreaker } from './db/servers';
 import { getUserSwearRecord, addUserSwear } from './db/users';
 import * as Curses from '../curses.json';
@@ -47,6 +49,8 @@ commands.set(removeCommand.data.name, removeCommand);
 commands.set(countCommand.data.name, countCommand);
 commands.set(firstCommand.data.name, firstCommand);
 commands.set(rankCommand.data.name, rankCommand);
+commands.set(addServerMilestoneCommand.data.name, addServerMilestoneCommand);
+commands.set(addUserMilestoneCommand.data.name, addUserMilestoneCommand);
 
 // Login to Discord with your client's token
 client.login(process.env.TOKEN);
