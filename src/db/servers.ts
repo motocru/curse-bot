@@ -5,7 +5,14 @@ import { totalUserSwearCount, getUserSpecificSwearCountAsync } from './users';
 export const getOrCreateServer = async (guildId: string): Promise<Server> => {
     const server = await db?.collection<Server>(guildId)?.findOne({ _id: guildId });
     if (server == null) {
-        const newServerData: Server = { _id: guildId, users: [], swears: [], firstCurseUserId: null };
+        const newServerData: Server = {
+            _id: guildId,
+            users: [],
+            swears: [],
+            firstCurseUserId: null,
+            userMilestones: {},
+            serverMilestones: {}
+        };
         await db?.collection<Server>(guildId).insertOne(newServerData)
         return newServerData;
     } else {
