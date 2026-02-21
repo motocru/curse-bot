@@ -1,6 +1,16 @@
 import { db } from './db';
 import { Server } from './dataTypes';
 import { totalUserSwearCount, getUserSpecificSwearCountAsync } from './users';
+import * as Curses from '../../curses.json';
+
+/**adding the milestone constants below */
+const USER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.userMilestones).map(([key, value]) => [Number(key), value])
+)
+
+const SERVER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.serverMilestones).map(([key, value]) => [Number(key), value])
+)
 
 export const getOrCreateServer = async (guildId: string): Promise<Server> => {
     const server = await db?.collection<Server>(guildId)?.findOne({ _id: guildId });
@@ -174,7 +184,8 @@ export const getServerSpecificSwearRankings = async (guildId: string, curse: str
 export const getUserMilestones = async (guildId: string): Promise<Record<number, string>> => {
     const server = await getOrCreateServer(guildId);
     if (!server.userMilestones) server.userMilestones = {};
-    return server.userMilestones;
+    const milestones = { ...USER_MILESTONES, ...server.userMilestones };
+    return milestones;
 }
 
 /**
@@ -185,7 +196,9 @@ export const getUserMilestones = async (guildId: string): Promise<Record<number,
 export const getServerMilestones = async (guildId: string): Promise<Record<number, string>> => {
     const server = await getOrCreateServer(guildId);
     if (!server.serverMilestones) server.serverMilestones = {};
-    return server.serverMilestones;
+    const milestones = { ...SERVER_MILESTONES, ...server.serverMilestones };
+    console.log(server.serverMilestones);
+    return milestones;
 }
 
 /**

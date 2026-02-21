@@ -12,18 +12,9 @@ import { firstCommand } from './commands/first';
 import { rankCommand } from './commands/rank';
 import { addServerMilestoneCommand } from './commands/add-server-milestone';
 import { addUserMilestoneCommand } from './commands/add-user-milestone';
-import { getServerCustomSwearList, getServerSwearTotal, setServerSealBreaker } from './db/servers';
+import { getServerCustomSwearList, getServerSwearTotal, setServerSealBreaker, getServerMilestones, getUserMilestones } from './db/servers';
 import { getUserSwearRecord, addUserSwear } from './db/users';
 import * as Curses from '../curses.json';
-
-/**adding the  message constants below */
-const USER_MILESTONES: Record<number, string> = Object.fromEntries(
-    Object.entries(Curses.userMilestones).map(([key, value]) => [Number(key), value])
-)
-
-const SERVER_MILESTONES: Record<number, string> = Object.fromEntries(
-    Object.entries(Curses.serverMilestones).map(([key, value]) => [Number(key), value])
-)
 
 const client = new Client({
     intents: [
@@ -148,8 +139,11 @@ async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
     curses = curses.filter(function (elem, index, self) {
         return index === self.indexOf(elem);
     });
-    const userMessage = await userMessageEvaluator(curses, msg.author.id, priorUserSwearRecord, newUserSwearRecord);
-    const serverMessage = await serverMessageEvaluator(curses, msg.guild?.name!, priorServerSwearRecord, newServerSwearRecord);
+    const userMilestones = await getUserMilestones(msg.guildId!);
+    const serverMilestones = await getServerMilestones(msg.guildId!);
+
+    const userMessage = userMessageEvaluator(curses, msg.author.id, priorUserSwearRecord, newUserSwearRecord, userMilestones);
+    const serverMessage = serverMessageEvaluator(curses, msg.guild?.name!, priorServerSwearRecord, newServerSwearRecord, serverMilestones);
     if ((userMessage + serverMessage).length > 0) {
         msg.channel.send(userMessage + serverMessage);
     }
@@ -163,16 +157,16 @@ async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
  * @param currentRecord The current user's curse record
  * @returns 
  */
-async function userMessageEvaluator(curses: string[], userId: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
+function userMessageEvaluator(curses: string[], userId: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>, milestones: Record<number, string>) {
     let responseString = ``;
     const addresserText = `<@${userId}>`;
     for (let i = 0; i < curses.length; i++) {
         const priorCount = priorRecord[curses[i]] ?? 0;
         const currentCount = currentRecord[curses[i]];
-        for (const k in USER_MILESTONES) {
+        for (const k in milestones) {
             const mile = +k;
             if (priorCount < mile && currentCount >= mile) {
-                responseString += `${addresserText} has used ${curses[i].toLowerCase()} over ${mile} times, ${USER_MILESTONES[k]}\n`;
+                responseString += `${addresserText} has used ${curses[i].toLowerCase()} over ${mile} times, ${milestones[k]}\n`;
             }
         }
     }
@@ -187,19 +181,19 @@ async function userMessageEvaluator(curses: string[], userId: string, priorRecor
  * @param currentRecord The current server's curse record
  * @returns 
  */
-async function serverMessageEvaluator(curses: string[], serverName: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>) {
+function serverMessageEvaluator(curses: string[], serverName: string, priorRecord: Record<string, number>, currentRecord: Record<string, number>, milestones: Record<number, string>) {
     let responseString = ``;
     const addresserText = `${serverName}`;
     for (let i = 0; i < curses.length; i++) {
         const priorCount = priorRecord[curses[i]] ?? 0;
         const currentCount = currentRecord[curses[i]];
-        for (const k in SERVER_MILESTONES) {
+        for (const k in milestones) {
             const mile = +k;
             if (priorCount < mile && currentCount >= mile) {
                 if (mile === 1) {
-                    responseString += `${addresserText} has used ${curses[i].toLowerCase()} for the first time, ${SERVER_MILESTONES[k]}\n`;
+                    responseString += `${addresserText} has used ${curses[i].toLowerCase()} for the first time, ${milestones[k]}\n`;
                 } else {
-                    responseString += `${addresserText} has used ${curses[i].toLowerCase()} over ${mile} times, ${SERVER_MILESTONES[k]}\n`;
+                    responseString += `${addresserText} has used ${curses[i].toLowerCase()} over ${mile} times, ${milestones[k]}\n`;
                 }
 
             }
