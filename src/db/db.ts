@@ -18,22 +18,12 @@ async function run() {
         db = client.db('servers');
         db.command({ ping: 1 });
         console.log('ping successful');
+        /** below is a code to delete the tables so i can just un-comment this
+         * rather than type it out everytime*/
+        // db.dropDatabase();
     } finally {
         //ensure our closure of the client connection
         //client.close();
     }
 }
 run().catch(console.dir);
-
-
-//  MongoClient.connect('mongodb://localhost:27017', (err, database) => {
-//     if (err !== undefined && err !== null) {
-//         console.error(err);
-//     } else {
-//         console.log('database connection made');
-//         db = database?.db('servers');
-//         /*below is a code to delete the tables so i can just un-comment this
-//         rather than type it out everytime*/
-//         //db?.dropDatabase();
-//     }
-// });

@@ -1,8 +1,8 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { serverSwearCount, getServerSpecificSwearCount } from "../db/servers";
 import { getUserSwearCountAsync, getUserSpecificSwearCountAsync } from "../db/users";
-import { serverNoSwearsFound } from "../lib/helper";
+import { serverNoSwearMessage, curseFreeMessage } from "../../curses.json";
 
 export const countCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ export const countCommand: SlashCommand = {
             option.setName('curse')
                 .setDescription('the curse word to count')
                 .setRequired(false)),
-    async execute(interaction: ChatInputCommandInteraction, client: Client) {
+    async execute(interaction: ChatInputCommandInteraction) {
         const user = interaction.options.getUser('user');
         var curse = interaction.options.getString('curse');
         //first we separate it by the user
@@ -32,7 +32,7 @@ export const countCommand: SlashCommand = {
                 if (count > 0) {
                     await interaction.reply(`total curse count for ${member?.displayName}: ${count}`);
                 } else {
-                    await interaction.reply(`${member?.displayName} has not yet cursed on this server\nThey are pure of heart and free from sin.`);
+                    await interaction.reply(`${member?.displayName} ${curseFreeMessage}`);
                 }
             }
         } else {
@@ -46,7 +46,7 @@ export const countCommand: SlashCommand = {
                 if (count > 0) {
                     await interaction.reply(`total swear count for ${interaction.guild?.name}: ${count}`);
                 } else {
-                    await interaction.reply(serverNoSwearsFound);
+                    await interaction.reply(serverNoSwearMessage);
                 }
             }
         }

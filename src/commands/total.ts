@@ -1,8 +1,8 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { getServerSwearTotal } from "../db/servers";
 import { getUserSwearRecord } from "../db/users";
-import { serverNoSwearsFound } from "../lib/helper";
+import { serverNoSwearMessage, curseFreeMessage } from "../../curses.json";
 
 export const totalCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -12,14 +12,14 @@ export const totalCommand: SlashCommand = {
             option.setName('user')
                 .setDescription('the user to check the total curse count for')
                 .setRequired(false)),
-    async execute(interaction: ChatInputCommandInteraction, client: Client) {
+    async execute(interaction: ChatInputCommandInteraction) {
         const user = interaction.options.getUser('user');
         if (user) {
             var member = await interaction.guild?.members.fetch(user.id);
             const rankings = await getUserSwearRecord(interaction.guildId!, user.id);
             const responseString = await swearStringBuilder(rankings);
             if (responseString === '') {
-                await interaction.reply(`No rankings found for ${member?.displayName}`);
+                await interaction.reply(`${member?.displayName} ${curseFreeMessage}`);
             } else {
                 await interaction.reply(responseString);
             }
@@ -27,7 +27,7 @@ export const totalCommand: SlashCommand = {
             const rankings = await getServerSwearTotal(interaction.guildId!);
             const responseString = await swearStringBuilder(rankings);
             if (responseString === '') {
-                await interaction.reply(serverNoSwearsFound);
+                await interaction.reply(serverNoSwearMessage);
             } else {
                 await interaction.reply(responseString);
             }

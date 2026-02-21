@@ -1,7 +1,7 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { getServerSwearRankingsAsync, getServerSpecificSwearRankings } from "../db/servers";
-import { serverNoSwearsFound } from "../lib/helper";
+import { serverNoSwearMessage } from "../../curses.json";
 
 export const rankCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ export const rankCommand: SlashCommand = {
             option.setName('curse')
                 .setDescription('the curse word to count')
                 .setRequired(false)),
-    async execute(interaction: ChatInputCommandInteraction, client: Client) {
+    async execute(interaction: ChatInputCommandInteraction) {
         const curse = interaction.options.getString('curse');
         if (curse) {
             const rankings = await getServerSpecificSwearRankings(interaction.guildId!, curse);
@@ -25,7 +25,7 @@ export const rankCommand: SlashCommand = {
             const rankings = await getServerSwearRankingsAsync(interaction.guildId!);
             const responseString = await swearStringBuilder(interaction, rankings);
             if (responseString === '') {
-                await interaction.reply(serverNoSwearsFound);
+                await interaction.reply(serverNoSwearMessage);
             } else {
                 await interaction.reply(responseString);
             }

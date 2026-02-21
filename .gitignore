@@ -9,4 +9,4 @@ curses.json
 note.txt
 test.js
 bin/
-.env
+.env*

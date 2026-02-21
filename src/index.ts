@@ -15,36 +15,13 @@ import { getUserSwearRecord, addUserSwear } from './db/users';
 import * as Curses from '../curses.json';
 
 /**adding the  message constants below */
-const USER_MILESTONES: Record<number, string> = {
-    10: Curses.userMessages.message2,
-    25: Curses.userMessages.message3,
-    50: Curses.userMessages.message4,
-    75: Curses.userMessages.message5,
-    100: Curses.userMessages.message6,
-    150: Curses.userMessages.message7,
-    200: Curses.userMessages.message8,
-    300: Curses.userMessages.message9,
-    400: Curses.userMessages.message10,
-    450: Curses.userMessages.message11,
-    500: Curses.userMessages.message12
-}
+const USER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.userMilestones).map(([key, value]) => [Number(key), value])
+)
 
-const SERVER_MILESTONES: Record<number, string> = {
-    1: Curses.serverMessages.message1,
-    10: Curses.serverMessages.message2,
-    100: Curses.serverMessages.message3,
-    250: Curses.serverMessages.message4,
-    500: Curses.serverMessages.message5,
-    750: Curses.serverMessages.message6,
-    1000: Curses.serverMessages.message7,
-    1250: Curses.serverMessages.message8,
-    1500: Curses.serverMessages.message9,
-    1750: Curses.serverMessages.message10,
-    2000: Curses.serverMessages.message11,
-    2250: Curses.serverMessages.message12,
-    2350: Curses.serverMessages.message13,
-    2500: Curses.serverMessages.message14
-}
+const SERVER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.serverMilestones).map(([key, value]) => [Number(key), value])
+)
 
 const client = new Client({
     intents: [
@@ -121,7 +98,7 @@ async function handleInteraction(interaction: Interaction) {
     }
 
     try {
-        await command.execute(interaction, client);
+        await command.execute(interaction);
     } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -160,7 +137,7 @@ async function incrementSwearsAndSendMessage(curses: string[], msg: Message) {
     }
     if (Object.keys(priorUserSwearRecord).length === 0) {
         //send a message for a user cursing for the first time
-        msg.channel.send(`<@${msg.author.id}> ${Curses.userMessages.message1}`);
+        msg.channel.send(`<@${msg.author.id}> ${Curses.userFirstSwearMessage}`);
     }
     const newUserSwearRecord = await addUserSwear(msg.guildId!, msg.author.id, curses);
     const newServerSwearRecord = await getServerSwearTotal(msg.guildId!);

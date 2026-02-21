@@ -1,5 +1,5 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client, GuildMember } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, GuildMember } from "discord.js";
 import { canEditSwearList } from "../lib/helper";
 import { addSwearToCustomListAsync } from "../db/servers";
 
@@ -11,7 +11,7 @@ export const addCommand: SlashCommand = {
             option.setName('curse')
                 .setDescription('the curse to add')
                 .setRequired(true)),
-    async execute(interaction: ChatInputCommandInteraction, client: Client) {
+    async execute(interaction: ChatInputCommandInteraction) {
         //first check if user has permission to edit the swear list
         var canEdit = await canEditSwearList(interaction.member as GuildMember);
         if (!canEdit) {

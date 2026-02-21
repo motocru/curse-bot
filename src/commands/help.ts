@@ -1,5 +1,5 @@
 import { SlashCommand } from "../types";
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 
 const helpMessage = `\`\`\`
     Current Commands:
@@ -21,7 +21,7 @@ export const helpCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('help')
         .setDescription('How to use curseBot'),
-    async execute(interaction: ChatInputCommandInteraction, client: Client) {
+    async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply(helpMessage);
     },
 };
