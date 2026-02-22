@@ -11,7 +11,7 @@ services:
     container_name: curse-bot
     depends_on:
       - mongodb
-    env_file: .env
+    env_file: .env.production
     restart: unless-stopped
 volumes:
   mongo_data:
