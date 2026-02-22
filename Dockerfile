@@ -27,6 +27,7 @@ WORKDIR /app
 # Copy only necessary files from the builder stage
 # Copy package.json and package-lock.json to install only production dependencies
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.env ./
 RUN npm install --only=production
 
 # Copy the transpiled JavaScript files from the 'bin' (or 'build') directory

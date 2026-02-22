@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
+import { dbPromise } from './db/db';
 import { Client, GatewayIntentBits, Message, Events, Interaction, TextChannel } from "discord.js";
 import { installCommands } from './commands/install-commands';
 import { SlashCommand } from "./types";
@@ -44,7 +45,12 @@ commands.set(addServerMilestoneCommand.data.name, addServerMilestoneCommand);
 commands.set(addUserMilestoneCommand.data.name, addUserMilestoneCommand);
 
 // Login to Discord with your client's token
-client.login(process.env.TOKEN);
+async function start() {
+    await dbPromise;
+    client.login(process.env.TOKEN);
+}
+
+start();
 
 async function handleReady(client: Client<true>) {
     console.log(`curse bot ${client.user?.username} online`);

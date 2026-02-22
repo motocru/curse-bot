@@ -1,5 +1,5 @@
 import { MongoClient, Db, ServerApiVersion } from 'mongodb';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 export let db: Db | undefined;
@@ -12,8 +12,6 @@ async function connectWithRetry(retries = 5, delay = 5000) {
         console.error('❌ MONGODB_URI environment variable is not set!');
         process.exit(1);
     }
-
-    console.log(`Using MONGODB_URI: ${connectionString}`);
 
     client = new MongoClient(connectionString, {
         serverApi: {
@@ -47,4 +45,4 @@ async function connectWithRetry(retries = 5, delay = 5000) {
     }
 }
 
-connectWithRetry().catch(console.dir);
+export const dbPromise = connectWithRetry();
