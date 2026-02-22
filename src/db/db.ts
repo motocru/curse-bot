@@ -1,29 +1,50 @@
 import { MongoClient, Db, ServerApiVersion } from 'mongodb';
+import dotenv from 'dotenv';
+dotenv.config();
+
 export let db: Db | undefined;
 
-const client = new MongoClient(process.env.MONGODB_URI!, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true
+let client: MongoClient;
+
+async function connectWithRetry(retries = 5, delay = 5000) {
+    const connectionString = process.env.MONGODB_URI;
+    if (!connectionString) {
+        console.error('❌ MONGODB_URI environment variable is not set!');
+        process.exit(1);
     }
-});
 
+    console.log(`Using MONGODB_URI: ${connectionString}`);
 
-async function run() {
-    try {
-        console.log('connecting to server');
-        await client.connect();
+    client = new MongoClient(connectionString, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true
+        }
+    });
 
-        db = client.db('servers');
-        db.command({ ping: 1 });
-        console.log('ping successful');
-        /** below is a code to delete the tables so i can just un-comment this
-         * rather than type it out everytime*/
-        //db.dropDatabase();
-    } finally {
-        //ensure our closure of the client connection
-        //client.close();
+    while (retries > 0) {
+        try {
+            console.log(`Attempting to connect to MongoDB... (${retries} retries left)`);
+            await client.connect();
+
+            db = client.db('servers');
+            // Ping to confirm the connection is actually usable
+            await db.command({ ping: 1 });
+
+            console.log('✅ Successfully connected to MongoDB');
+            return; // Exit the loop on success
+        } catch (err) {
+            retries--;
+            console.error(`❌ Connection failed. Retrying in ${delay / 1000}s...`);
+            if (retries === 0) {
+                console.error('Could not connect to MongoDB. Exiting.');
+                process.exit(1);
+            }
+            // Wait for the specified delay before trying again
+            await new Promise(res => setTimeout(res, delay));
+        }
     }
 }
-run().catch(console.dir);
+
+connectWithRetry().catch(console.dir);
