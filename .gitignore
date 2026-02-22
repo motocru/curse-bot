@@ -1,10 +1,6 @@
 #cutting out the  node_modules directory
 node_modules/
 
-#cutting out authorization as well as curse object
-auth.json
-curses.json
-
 #there's no need to bring in the note.txt or test.js file either
 note.txt
 test.js

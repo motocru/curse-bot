@@ -5,7 +5,7 @@
   "main": "bot.js",
   "scripts": {
     "dev": "nodemon --watch src/index.ts --watch src --ext ts,json --exec ts-node src/index.ts",
-    "run": "tsc --build tsconfig.json && node",
+    "run": "tsc --build tsconfig.json && node bin/src/index.js",
     "build": "tsc --build tsconfig.json"
   },
   "repository": {

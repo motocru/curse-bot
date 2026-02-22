@@ -27,7 +27,6 @@ WORKDIR /app
 # Copy only necessary files from the builder stage
 # Copy package.json and package-lock.json to install only production dependencies
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.env ./
 COPY --from=builder /app/curses.json ./
 RUN npm install --only=production
 
