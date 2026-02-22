@@ -1,0 +1,230 @@
+import { db } from './db';
+import { Server } from './dataTypes';
+import { totalUserSwearCount, getUserSpecificSwearCountAsync } from './users';
+import * as Curses from '../../curses.json';
+
+/**adding the milestone constants below */
+const USER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.userMilestones).map(([key, value]) => [Number(key), value])
+)
+
+const SERVER_MILESTONES: Record<number, string> = Object.fromEntries(
+    Object.entries(Curses.serverMilestones).map(([key, value]) => [Number(key), value])
+)
+
+export const getOrCreateServer = async (guildId: string): Promise<Server> => {
+    const server = await db?.collection<Server>(guildId)?.findOne({ _id: guildId });
+    if (server == null) {
+        const newServerData: Server = {
+            _id: guildId,
+            users: [],
+            swears: [],
+            firstCurseUserId: null,
+            userMilestones: {},
+            serverMilestones: {}
+        };
+        await db?.collection<Server>(guildId).insertOne(newServerData)
+        return newServerData;
+    } else {
+        return server;
+    }
+}
+
+/**
+ * Gets the total number of times any curse words were used on the server
+ * @param guildId Id of the server getting all of the curse words selected
+ * @returns number of times a curse word was uttered in a server
+ */
+export const serverSwearCount = async (guildId: string): Promise<number> => {
+    const server = await getOrCreateServer(guildId);
+    let swearCount: number = 0;
+    server?.users.forEach(x => {
+        for (const swear in x?.swears) {
+            swearCount += x?.swears[swear] ?? 0;
+        }
+    });
+    return swearCount;
+}
+
+/**
+ * Gets the number of times a specific swear word ahs been used
+ * @param guildId Id of the server being checked for swear count
+ * @param swearWord swear word being chekced
+ * @returns number of times a specific swear word was used
+ */
+export const getServerSpecificSwearCount = async (guildId: string, swearWord: string): Promise<number> => {
+    const server = await getOrCreateServer(guildId);
+    let swearCount = 0;
+    server?.users.forEach(x => {
+        swearCount += x?.swears[swearWord] ?? 0;
+    });
+    return swearCount;
+}
+
+/**
+ * Gets a record of each swear word used and the number of times used on a server
+ * @param guildId Id of the server being checked
+ * @returns Record of words used and their total uses
+ */
+export const getServerSwearTotal = async (guildId: string): Promise<Record<string, number>> => {
+    const server = await getOrCreateServer(guildId);
+    let serverRecords: Record<string, number> = {};
+    server?.users.forEach(x => {
+        for (const swear in x?.swears) {
+            if (serverRecords[swear] >= 1) {
+                serverRecords[swear] += x?.swears[swear] ?? 0;
+            } else {
+                serverRecords[swear] = x?.swears[swear]
+            }
+        }
+    });
+    return serverRecords;
+}
+
+/**
+ * Returns the discord Id of who swore first on a server
+ * @param guildId Id of the server being checked
+ * @returns Id of the user who first swore on a server
+ */
+export const getServerSealBreaker = async (guildId: string): Promise<string | null> => {
+    const server = await getOrCreateServer(guildId);
+    return server?.firstCurseUserId ?? null;
+}
+
+/**
+ * Sets the user who swore first on a server
+ * @param guildId Id of the server being checked
+ * @param userId Id of the user who swore first on the server
+ * @returns void
+ */
+export const setServerSealBreaker = async (guildId: string, userId: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    server.firstCurseUserId = userId;
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { firstCurseUserId: userId } });
+}
+
+/**
+ * Retruns the list of custom swears a server has
+ * @param guildId Id of the server being checked
+ * @returns String list of custom swears added to a server
+ */
+export const getServerCustomSwearList = async (guildId: string): Promise<string[]> => {
+    const server = await getOrCreateServer(guildId);
+    return server?.swears ?? [];
+}
+
+/**
+ * Adds a single swear word to a server's swear list
+ * @param guildId Id of the server to add the swear to
+ * @param swear swear word to add to the server's swear list
+ * @returns boolean indicating if the swear was added successfully
+ */
+export const addSwearToCustomListAsync = async (guildId: string, swear: string): Promise<boolean> => {
+    const server = await getOrCreateServer(guildId);
+    if (server.swears.includes(swear)) {
+        return false;
+    }
+    server.swears.push(swear);
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { swears: server.swears } });
+    return true;
+}
+
+/**
+ * Removes a single swear word from a server's swear list
+ * @param guildId Id of the server to remove the swear from
+ * @param swear swear word to remove from the server's swear list
+ * @returns boolean indicating if the swear was removed successfully
+ */
+export const removeSwearFromCustomListAsync = async (guildId: string, swear: string): Promise<boolean> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.swears.includes(swear)) {
+        return false;
+    }
+    server.swears = server.swears.filter(word => word !== swear);
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { swears: server.swears } });
+    return true;
+}
+
+/**
+ * Gets a record of each user and the total number of times each has swore on the server
+ * @param guildId Id of the server rankings being retrieved for
+ * @returns Record of each user and the total amount of times a user swore
+ */
+export const getServerSwearRankingsAsync = async (guildId: string): Promise<Record<string, number>> => {
+    const server = await getOrCreateServer(guildId);
+    let userSwearTotals: Record<string, number> = {};
+    await Promise.all(server.users.map(async user => {
+        const usersSwears = await totalUserSwearCount(guildId, user.id);
+        if (usersSwears > 0) userSwearTotals[user.id] = usersSwears;
+    }));
+    return userSwearTotals;
+}
+
+/**
+ * Gets a Record of each user and the total number of times each has used the given curse word
+ * @param guildId Id of the server rankings being retrieved for
+ * @param curse specific curse word being grabbed
+ * @returns record of users who have used the given word and the number of times they have used it
+ */
+export const getServerSpecificSwearRankings = async (guildId: string, curse: string): Promise<Record<string, number>> => {
+    const server = await getOrCreateServer(guildId);
+    let userSwearTotals: Record<string, number> = {};
+    await Promise.all(server.users.map(async user => {
+        const usersSwears = await getUserSpecificSwearCountAsync(guildId, user.id, curse);
+        if (usersSwears > 0) userSwearTotals[user.id] = usersSwears;
+    }));
+    return userSwearTotals;
+}
+
+/**
+ * Gets a Record of each user milestone and the message associated with it
+ * @param guildId Id of the user milestones being retrieved for
+ * @returns record of user milestones and their associated messages
+ */
+export const getUserMilestones = async (guildId: string): Promise<Record<number, string>> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.userMilestones) server.userMilestones = {};
+    const milestones = { ...USER_MILESTONES, ...server.userMilestones };
+    return milestones;
+}
+
+/**
+ * Gets a Record of each server milestone and the message associated with it
+ * @param guildId Id of the server milestones being retrieved for
+ * @returns record of server milestones and their associated messages
+ */
+export const getServerMilestones = async (guildId: string): Promise<Record<number, string>> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.serverMilestones) server.serverMilestones = {};
+    const milestones = { ...SERVER_MILESTONES, ...server.serverMilestones };
+    console.log(server.serverMilestones);
+    return milestones;
+}
+
+/**
+ * Adds a milestone for user swearing amounts
+ * @param guildId Id of the server to add the milestone to
+ * @param milestone milestone to add to the user
+ * @param message message to display when the milestone is reached
+ * @returns void
+ */
+export const addUserMilestone = async (guildId: string, milestone: number, message: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.userMilestones) server.userMilestones = {};
+    server.userMilestones[milestone] = message;
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { userMilestones: server.userMilestones } });
+}
+
+/**
+ * Adds a milestone for server swearing amounts
+ * @param guildId Id of the server to add the milestone to
+ * @param milestone milestone to add to the server
+ * @param message message to display when the milestone is reached
+ * @returns void
+ */
+export const addServerMilestone = async (guildId: string, milestone: number, message: string): Promise<void> => {
+    const server = await getOrCreateServer(guildId);
+    if (!server.serverMilestones) server.serverMilestones = {};
+    server.serverMilestones[milestone] = message;
+    await db?.collection<Server>(guildId)?.updateOne({ _id: guildId }, { $set: { serverMilestones: server.serverMilestones } });
+}

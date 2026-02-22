@@ -1,26 +1,25 @@
 {
   "compilerOptions": {
-    "target": "es2019",                                  
-    "module": "commonjs",                               
+    "target": "es2019",
+    "module": "commonjs",
     "esModuleInterop": true,
-    "resolveJsonModule": true,         
-    "allowSyntheticDefaultImports": true,                                    
-    "forceConsistentCasingInFileNames": true,            
-    "strict": true,                                      
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
     "skipLibCheck": true,
-    "outDir" : "./bin",
+    "outDir": "./bin",
     "lib": [
       "es2019"
     ],
     "typeRoots": [
       "./node_modules/@types"
-    ]             
+    ]
   },
   "include": [
-    "bot.ts",
+    "src/index.ts",
   ],
-  
   "exclude": [
     "node_modules"
-  ]        
+  ]
 }

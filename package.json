@@ -4,7 +4,7 @@
   "description": "a bot to keep track of used curses and different levels of distastefulness milestones for discord servers",
   "main": "bot.js",
   "scripts": {
-    "dev": "nodemon --watch bot.ts --exec ts-node bot.ts",
+    "dev": "nodemon --watch src/index.ts --watch src --ext ts,json --exec ts-node src/index.ts",
     "run": "tsc --build tsconfig.json && node",
     "build": "tsc --build tsconfig.json"
   },
@@ -27,6 +27,7 @@
     "@types/node": "^20.12.12",
     "@types/ws": "^8.5.3",
     "discord.js": "^14.15.2",
+    "dotenv": "^17.3.1",
     "mongodb": "^6.6.1",
     "ts-node": "^10.9.2"
   }

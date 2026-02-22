@@ -10,24 +10,41 @@
         "type": "string"
       }
     },
-    "helpMessage": {
-      "type": "string",
-      "description": "contains the message printed out when a user issues the '?help' command to curse-bot"
-    },
     "curseFreeMessage": {
       "type": "string",
       "description": "message printed when a user curse total is requested and they have not cursed"
     },
-    "userMessages": {
+    "sealBreakerMessage": {
+      "type": "string",
+      "description": "message when running the /first command"
+    },
+    "userFirstSwearMessage": {
+      "type": "string",
+      "description": "message printed when a user swears for the first time"
+    },
+    "serverNoSwearMessage": {
+      "type": "string",
+      "description": "message printed when a when checking curse totals on a server that has not had any curse words"
+    },
+    "userMilestones": {
       "type": "object",
-      "description": "an object containing all of the user-specific curse word messsages",
+      "description": "an object containing all of the user-specific curse word milestones",
       "items": {
-        "type": "string"
+        "key": "number",
+        "value": "string"
       }
     },
-    "serverMessages": {
+    "serverMilestones": {
       "type": "object",
-      "description": "an object containing all server-specific curse word messages",
+      "description": "an object containing all server-specific curse word milestones",
+      "items": {
+        "key": "number",
+        "value": "string"
+      }
+    },
+    "botResponses": {
+      "type": "array",
+      "description": "an array containing all of the bot responses to being pinged",
       "items": {
         "type": "string"
       }
