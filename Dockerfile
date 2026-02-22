@@ -28,6 +28,7 @@ WORKDIR /app
 # Copy package.json and package-lock.json to install only production dependencies
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.env ./
+COPY --from=builder /app/curses.json ./
 RUN npm install --only=production
 
 # Copy the transpiled JavaScript files from the 'bin' (or 'build') directory
@@ -38,11 +39,3 @@ ENV NODE_ENV=production
 # Set the command to run the built JavaScript file
 
 CMD ["node", "./bin/src/index.js"] 
-# COPY --from=builder /app/bin ./bin
-# COPY --from=builder /app/node_modules ./node_modules
-# COPY --from=builder /app/auth.json ./auth.json
-# COPY --from=builder /app/curses.json ./curses.json
-
-
-
-# CMD ["node", "src/index.js"]
