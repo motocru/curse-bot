@@ -7,7 +7,7 @@ services:
     volumes:
       - mongo_data:/data/db
   curse-bot:
-    build: .
+    image: ghcr.io/motocru/curse-bot:latest
     container_name: curse-bot
     depends_on:
       - mongodb
