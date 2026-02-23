@@ -14,7 +14,7 @@ const SERVER_MILESTONES: Record<number, string> = Object.fromEntries(
 
 export const getOrCreateServer = async (guildId: string): Promise<Server> => {
     const server = await db?.collection<Server>(guildId)?.findOne({ _id: guildId });
-    if (server == null) {
+    if (server === null || server === undefined) {
         const newServerData: Server = {
             _id: guildId,
             users: [],
@@ -197,7 +197,6 @@ export const getServerMilestones = async (guildId: string): Promise<Record<numbe
     const server = await getOrCreateServer(guildId);
     if (!server.serverMilestones) server.serverMilestones = {};
     const milestones = { ...SERVER_MILESTONES, ...server.serverMilestones };
-    console.log(server.serverMilestones);
     return milestones;
 }
 

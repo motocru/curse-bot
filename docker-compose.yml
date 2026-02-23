@@ -12,6 +12,6 @@ services:
     depends_on:
       - mongodb
     env_file: .env.production
-    restart: unless-stopped
+    restart: always
 volumes:
   mongo_data:
