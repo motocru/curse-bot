@@ -4,6 +4,7 @@ services:
     container_name: mongodb
     ports:
       - "27017:27017"
+    restart: always
     volumes:
       - mongo_data:/data/db
   curse-bot:
@@ -12,6 +13,6 @@ services:
     depends_on:
       - mongodb
     env_file: .env.production
-    restart: unless-stopped
+    restart: always
 volumes:
   mongo_data:
